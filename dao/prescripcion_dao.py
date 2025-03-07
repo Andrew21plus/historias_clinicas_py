@@ -1,9 +1,8 @@
-import sqlite3
 from models.prescripcion import Prescripcion
-from dao.database import DB_NAME
+from dao.database import get_connection  # Importar get_connection
 
 def get_all_prescripciones():
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM Prescripciones")
     rows = c.fetchall()
@@ -12,7 +11,7 @@ def get_all_prescripciones():
     return prescripciones
 
 def get_prescripcion_by_id(id_prescripcion):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM Prescripciones WHERE id_prescripcion = ?", (id_prescripcion,))
     row = c.fetchone()
@@ -20,7 +19,7 @@ def get_prescripcion_by_id(id_prescripcion):
     return Prescripcion(*row) if row else None
 
 def add_prescripcion(id_paciente, fecha, medicamento, dosis, indicaciones, firmado_por):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         INSERT INTO Prescripciones (id_paciente, fecha, medicamento, dosis, indicaciones, firmado_por)
@@ -30,7 +29,7 @@ def add_prescripcion(id_paciente, fecha, medicamento, dosis, indicaciones, firma
     conn.close()
 
 def update_prescripcion(id_prescripcion, fecha, medicamento, dosis, indicaciones, firmado_por):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         UPDATE Prescripciones 
@@ -41,7 +40,7 @@ def update_prescripcion(id_prescripcion, fecha, medicamento, dosis, indicaciones
     conn.close()
 
 def delete_prescripcion(id_prescripcion):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("DELETE FROM Prescripciones WHERE id_prescripcion = ?", (id_prescripcion,))
     conn.commit()

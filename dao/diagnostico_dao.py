@@ -1,9 +1,8 @@
-import sqlite3
 from models.diagnostico import Diagnostico
-from dao.database import DB_NAME
+from dao.database import get_connection  # Importar get_connection
 
 def get_all_diagnosticos():
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM Diagnosticos")
     rows = c.fetchall()
@@ -12,7 +11,7 @@ def get_all_diagnosticos():
     return diagnosticos
 
 def get_diagnostico_by_id(id_diagnostico):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM Diagnosticos WHERE id_diagnostico = ?", (id_diagnostico,))
     row = c.fetchone()
@@ -20,7 +19,7 @@ def get_diagnostico_by_id(id_diagnostico):
     return Diagnostico(*row) if row else None
 
 def add_diagnostico(id_paciente, fecha, diagnostico, cie, definitivo):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         INSERT INTO Diagnosticos (id_paciente, fecha, diagnostico, cie, definitivo)
@@ -30,7 +29,7 @@ def add_diagnostico(id_paciente, fecha, diagnostico, cie, definitivo):
     conn.close()
 
 def update_diagnostico(id_diagnostico, fecha, diagnostico, cie, definitivo):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         UPDATE Diagnosticos 
@@ -41,8 +40,6 @@ def update_diagnostico(id_diagnostico, fecha, diagnostico, cie, definitivo):
     conn.close()
 
 def delete_diagnostico(id_diagnostico):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
-    c.execute("DELETE FROM Diagnosticos WHERE id_diagnostico = ?", (id_diagnostico,))
-    conn.commit()
-    conn.close()
+    c.execute("DELETE FROM Diagnosticos WHERE id_diagnostico = ?", (id_diagn

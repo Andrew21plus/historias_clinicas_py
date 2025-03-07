@@ -1,9 +1,8 @@
-import sqlite3
 from models.tratamiento import Tratamiento
-from dao.database import DB_NAME
+from dao.database import DB_NAME, get_connection  # Importar get_connection
 
 def get_all_tratamientos():
-    conn = sqlite3.connect(DB_NAME)
+   conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM Tratamientos")
     rows = c.fetchall()
@@ -12,7 +11,7 @@ def get_all_tratamientos():
     return tratamientos
 
 def get_tratamiento_by_id(id_tratamiento):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM Tratamientos WHERE id_tratamiento = ?", (id_tratamiento,))
     row = c.fetchone()
@@ -20,7 +19,7 @@ def get_tratamiento_by_id(id_tratamiento):
     return Tratamiento(*row) if row else None
 
 def add_tratamiento(id_paciente, fecha, tratamiento):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         INSERT INTO Tratamientos (id_paciente, fecha, tratamiento)
@@ -30,7 +29,7 @@ def add_tratamiento(id_paciente, fecha, tratamiento):
     conn.close()
 
 def update_tratamiento(id_tratamiento, fecha, tratamiento):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         UPDATE Tratamientos 
@@ -41,7 +40,7 @@ def update_tratamiento(id_tratamiento, fecha, tratamiento):
     conn.close()
 
 def delete_tratamiento(id_tratamiento):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("DELETE FROM Tratamientos WHERE id_tratamiento = ?", (id_tratamiento,))
     conn.commit()

@@ -1,9 +1,8 @@
-import sqlite3
 from models.signo_vital import SignoVital
-from dao.database import DB_NAME
+from dao.database import get_connection  # Importar get_connection
 
 def get_all_signos_vitales():
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM Signos_Vitales")
     rows = c.fetchall()
@@ -12,7 +11,7 @@ def get_all_signos_vitales():
     return signos
 
 def get_signo_vital_by_id(id_signo):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM Signos_Vitales WHERE id_signo = ?", (id_signo,))
     row = c.fetchone()
@@ -20,7 +19,7 @@ def get_signo_vital_by_id(id_signo):
     return SignoVital(*row) if row else None
 
 def add_signo_vital(id_paciente, fecha, presion_arterial, frecuencia_cardiaca, frecuencia_respiratoria, temperatura, peso, talla):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         INSERT INTO Signos_Vitales (id_paciente, fecha, presion_arterial, frecuencia_cardiaca, frecuencia_respiratoria, temperatura, peso, talla)
@@ -30,7 +29,7 @@ def add_signo_vital(id_paciente, fecha, presion_arterial, frecuencia_cardiaca, f
     conn.close()
 
 def update_signo_vital(id_signo, fecha, presion_arterial, frecuencia_cardiaca, frecuencia_respiratoria, temperatura, peso, talla):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         UPDATE Signos_Vitales 
@@ -41,7 +40,7 @@ def update_signo_vital(id_signo, fecha, presion_arterial, frecuencia_cardiaca, f
     conn.close()
 
 def delete_signo_vital(id_signo):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("DELETE FROM Signos_Vitales WHERE id_signo = ?", (id_signo,))
     conn.commit()

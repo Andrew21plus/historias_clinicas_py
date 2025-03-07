@@ -1,9 +1,8 @@
-import sqlite3
 from models.cie import CIE
-from dao.database import DB_NAME
+from dao.database import get_connection  # Importar get_connection
 
 def get_all_cie():
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM CIE")
     rows = c.fetchall()
@@ -12,7 +11,7 @@ def get_all_cie():
     return cie_list
 
 def get_cie_by_id(id_cie):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM CIE WHERE id_cie = ?", (id_cie,))
     row = c.fetchone()
@@ -20,7 +19,7 @@ def get_cie_by_id(id_cie):
     return CIE(*row) if row else None
 
 def add_cie(codigo, descripcion):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         INSERT INTO CIE (codigo, descripcion)
@@ -30,7 +29,7 @@ def add_cie(codigo, descripcion):
     conn.close()
 
 def update_cie(id_cie, codigo, descripcion):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         UPDATE CIE 
@@ -41,7 +40,7 @@ def update_cie(id_cie, codigo, descripcion):
     conn.close()
 
 def delete_cie(id_cie):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("DELETE FROM CIE WHERE id_cie = ?", (id_cie,))
     conn.commit()

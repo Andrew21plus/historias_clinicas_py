@@ -1,9 +1,8 @@
-import sqlite3
 from models.evolucion import Evolucion
-from dao.database import DB_NAME
+from dao.database import get_connection  # Importar get_connection
 
 def get_all_evoluciones():
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM Evoluciones")
     rows = c.fetchall()
@@ -12,7 +11,7 @@ def get_all_evoluciones():
     return evoluciones
 
 def get_evolucion_by_id(id_evolucion):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM Evoluciones WHERE id_evolucion = ?", (id_evolucion,))
     row = c.fetchone()
@@ -20,7 +19,7 @@ def get_evolucion_by_id(id_evolucion):
     return Evolucion(*row) if row else None
 
 def add_evolucion(id_paciente, fecha, hora, notas):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         INSERT INTO Evoluciones (id_paciente, fecha, hora, notas)
@@ -30,7 +29,7 @@ def add_evolucion(id_paciente, fecha, hora, notas):
     conn.close()
 
 def update_evolucion(id_evolucion, fecha, hora, notas):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         UPDATE Evoluciones 
@@ -41,7 +40,7 @@ def update_evolucion(id_evolucion, fecha, hora, notas):
     conn.close()
 
 def delete_evolucion(id_evolucion):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("DELETE FROM Evoluciones WHERE id_evolucion = ?", (id_evolucion,))
     conn.commit()

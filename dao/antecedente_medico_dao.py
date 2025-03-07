@@ -1,9 +1,8 @@
-import sqlite3
 from models.antecedente_medico import AntecedenteMedico
-from dao.database import DB_NAME
+from dao.database import get_connection  # Importar get_connection
 
 def get_all_antecedentes_medicos():
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM Antecedentes_Medicos")
     rows = c.fetchall()
@@ -12,7 +11,7 @@ def get_all_antecedentes_medicos():
     return antecedentes
 
 def get_antecedente_medico_by_id(id_antecedente):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM Antecedentes_Medicos WHERE id_antecedente = ?", (id_antecedente,))
     row = c.fetchone()
@@ -20,7 +19,7 @@ def get_antecedente_medico_by_id(id_antecedente):
     return AntecedenteMedico(*row) if row else None
 
 def add_antecedente_medico(id_paciente, tipo, descripcion):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         INSERT INTO Antecedentes_Medicos (id_paciente, tipo, descripcion)
@@ -30,7 +29,7 @@ def add_antecedente_medico(id_paciente, tipo, descripcion):
     conn.close()
 
 def update_antecedente_medico(id_antecedente, tipo, descripcion):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         UPDATE Antecedentes_Medicos 
@@ -41,7 +40,7 @@ def update_antecedente_medico(id_antecedente, tipo, descripcion):
     conn.close()
 
 def delete_antecedente_medico(id_antecedente):
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("DELETE FROM Antecedentes_Medicos WHERE id_antecedente = ?", (id_antecedente,))
     conn.commit()
