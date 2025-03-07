@@ -1,10 +1,9 @@
-import sqlite3
 from models.paciente import Paciente
-from dao.database import DB_NAME
+from dao.database import DB_NAME, get_connection  # Importar get_connection
 
 def get_all_pacientes():
     """ Obtiene todos los pacientes de la base de datos """
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection en lugar de sqlite3.connect
     c = conn.cursor()
     c.execute("SELECT * FROM Pacientes")
     rows = c.fetchall()
@@ -14,7 +13,7 @@ def get_all_pacientes():
 
 def get_paciente_by_id(id_paciente):
     """ Obtiene un paciente por su ID """
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection en lugar de sqlite3.connect
     c = conn.cursor()
     c.execute("SELECT * FROM Pacientes WHERE id_paciente = ?", (id_paciente,))
     row = c.fetchone()
@@ -23,7 +22,7 @@ def get_paciente_by_id(id_paciente):
 
 def add_paciente(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto=None):
     """ Agrega un nuevo paciente a la base de datos """
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection en lugar de sqlite3.connect
     c = conn.cursor()
     c.execute("""
         INSERT INTO Pacientes (id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto)
@@ -34,7 +33,7 @@ def add_paciente(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_hist
 
 def update_paciente(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto=None):
     """ Actualiza los datos de un paciente """
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection en lugar de sqlite3.connect
     c = conn.cursor()
     c.execute("""
         UPDATE Pacientes 
@@ -46,7 +45,7 @@ def update_paciente(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_h
 
 def delete_paciente(id_paciente):
     """ Elimina un paciente por su ID """
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()  # Usar get_connection en lugar de sqlite3.connect
     c = conn.cursor()
     c.execute("DELETE FROM Pacientes WHERE id_paciente = ?", (id_paciente,))
     conn.commit()

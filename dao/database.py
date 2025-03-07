@@ -2,8 +2,15 @@ import sqlite3
 
 DB_NAME = "clinica.db"
 
-def init_db():
+def get_connection():
+    """ Obtiene una conexión a la base de datos con soporte para claves foráneas """
     conn = sqlite3.connect(DB_NAME)
+    # Habilitar soporte para claves foráneas
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
+def init_db():
+    conn = get_connection()
     c = conn.cursor()
 
     # Tabla de Pacientes
@@ -20,7 +27,7 @@ def init_db():
     # Tabla de Historias Clínicas
     c.execute('''CREATE TABLE IF NOT EXISTS Historias_Clinicas (
         id_historia INTEGER PRIMARY KEY AUTOINCREMENT,
-        id_paciente TEXT NOT NULL,
+        id_paciente TEXT NOT NULL UNIQUE,
         motivo_consulta TEXT,
         enfermedad_actual TEXT,
         FOREIGN KEY (id_paciente) REFERENCES Pacientes(id_paciente) ON DELETE CASCADE
