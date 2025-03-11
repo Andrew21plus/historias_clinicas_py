@@ -1,6 +1,15 @@
+# screens/pacientes_screen.py
 import flet as ft
 import base64
-from services.paciente_service import get_pacientes, add_paciente, update_paciente, delete_paciente
+from services.paciente_service import (
+    get_pacientes, 
+    add_paciente, 
+    update_paciente, 
+    delete_paciente,
+    cedula_existe,
+    historia_clinica_existe
+)
+from utils.formulario_paciente import crear_formulario_paciente, validar_cedula_ecuatoriana
 
 def PacientesScreen(page):
     selected_photo = None  # Variable para almacenar la imagen seleccionada
@@ -8,6 +17,11 @@ def PacientesScreen(page):
     current_page = 0  # Página actual de la paginación
     pacientes_per_page = 5  # Número de pacientes por página
     search_query = ""  # Variable para almacenar la consulta de búsqueda
+
+    def show_alert(message):
+        alert_dialog.content = ft.Text(message)
+        alert_dialog.open = True
+        page.update()
 
     def refresh_pacientes():
         pacientes_list.controls.clear()
@@ -67,22 +81,46 @@ def PacientesScreen(page):
         page.update()
 
     def add_paciente_clicked(e):
+        if not validar_cedula_ecuatoriana(paciente_id.value):
+            show_alert("Cédula inválida. Por favor, ingrese una cédula ecuatoriana válida.")
+            return
+
+        if cedula_existe(paciente_id.value):
+            show_alert("Error: La cédula ya está registrada.")
+            return
+
+        if historia_clinica_existe(paciente_historia.value):
+            show_alert("Error: El número de historia clínica ya está registrado.")
+            return
+
         if all([paciente_id.value, paciente_nombre.value, paciente_apellido.value, paciente_sexo.value, paciente_fecha.value, paciente_historia.value]):
             encoded_photo = None
             if selected_photo:
                 with open(selected_photo, "rb") as image_file:
                     encoded_photo = image_file.read()
 
-            add_paciente(
-                paciente_id.value, paciente_nombre.value, paciente_apellido.value,
-                paciente_sexo.value, paciente_fecha.value, paciente_historia.value, encoded_photo
-            )
-            clear_fields()
-            refresh_pacientes()
+            try:
+                # Convertir nombre y apellido a mayúsculas
+                nombre_mayusculas = paciente_nombre.value.upper()
+                apellido_mayusculas = paciente_apellido.value.upper()
+
+                add_paciente(
+                    paciente_id.value, nombre_mayusculas, apellido_mayusculas,
+                    paciente_sexo.value, paciente_fecha.value, paciente_historia.value, encoded_photo
+                )
+                clear_fields()  # Limpiar los campos después de agregar
+                form_panel.expanded = False  # Colapsar el panel del formulario
+                refresh_pacientes()
+                page.update()  # Forzar la actualización de la interfaz
+            except Exception as ex:
+                show_alert(f"Error al agregar paciente: {str(ex)}")
 
     def remove_paciente(id_paciente):
-        delete_paciente(id_paciente)
-        refresh_pacientes()
+        try:
+            delete_paciente(id_paciente)
+            refresh_pacientes()
+        except Exception as ex:
+            show_alert(f"Error al eliminar paciente: {str(ex)}")
 
     def open_edit_dialog(paciente):
         nonlocal selected_photo, existing_photo
@@ -101,31 +139,55 @@ def PacientesScreen(page):
         page.update()
 
     def save_edit(e):
+        if not validar_cedula_ecuatoriana(edit_id.value):
+            show_alert("Cédula inválida. Por favor, ingrese una cédula ecuatoriana válida.")
+            return
+
+        if cedula_existe(edit_id.value, exclude_id=edit_id.value):
+            show_alert("Error: La cédula ya está registrada.")
+            return
+
+        if historia_clinica_existe(edit_historia.value, exclude_id=edit_id.value):
+            show_alert("Error: El número de historia clínica ya está registrado.")
+            return
+
         encoded_photo = existing_photo  # Usar la foto existente por defecto
         if selected_photo:  # Si se selecciona una nueva foto, actualizar
             with open(selected_photo, "rb") as image_file:
                 encoded_photo = image_file.read()
 
-        update_paciente(
-            edit_id.value, edit_nombre.value, edit_apellido.value,
-            edit_sexo.value, edit_fecha.value, edit_historia.value, encoded_photo
-        )
-        edit_dialog.open = False
-        refresh_pacientes()
+        try:
+            # Convertir nombre y apellido a mayúsculas
+            nombre_mayusculas = edit_nombre.value.upper()
+            apellido_mayusculas = edit_apellido.value.upper()
+
+            update_paciente(
+                edit_id.value, nombre_mayusculas, apellido_mayusculas,
+                edit_sexo.value, edit_fecha.value, edit_historia.value, encoded_photo
+            )
+            edit_dialog.open = False
+            refresh_pacientes()
+        except Exception as ex:
+            show_alert(f"Error al actualizar paciente: {str(ex)}")
 
     def clear_fields():
         nonlocal selected_photo
         paciente_id.value = ""
         paciente_nombre.value = ""
         paciente_apellido.value = ""
-        paciente_sexo.value = ""
+        paciente_sexo.value = "M"  # Restablecer el valor del Dropdown a None
         paciente_fecha.value = ""
         paciente_historia.value = ""
         selected_photo = None
         photo_preview.src = None
         photo_preview.visible = False  # Oculta la vista previa de la imagen
         default_photo_icon.visible = True  # Muestra el icono por defecto
-        page.update()
+        page.update()  # Forzar la actualización de la interfaz
+
+    def close_edit_dialog(e):
+        edit_dialog.open = False
+        edit_sexo.value = None  # Restablecer el valor del Dropdown a None
+        page.update()  # Forzar la actualización de la interfaz
 
     def on_file_picked(e: ft.FilePickerResultEvent):
         nonlocal selected_photo
@@ -157,23 +219,21 @@ def PacientesScreen(page):
         search_query = search_field.value
         refresh_pacientes()
 
-    # Campos del formulario
-    paciente_id = ft.TextField(label="ID Paciente", width=200)
-    paciente_nombre = ft.TextField(label="Nombre", expand=True)
-    paciente_apellido = ft.TextField(label="Apellido", expand=True)
-    paciente_sexo = ft.Dropdown(
-        label="Sexo",
-        options=[ft.dropdown.DropdownOption("M"), ft.dropdown.DropdownOption("F"), ft.dropdown.DropdownOption("O")],
-        width=200
-    )
-    paciente_fecha = ft.TextField(label="Fecha Nacimiento", width=200)
-    paciente_historia = ft.TextField(label="Historia Clínica", width=200)
+    # Crear el formulario desde utils
+    form_data = crear_formulario_paciente(page, add_paciente_clicked, on_file_picked)
+    form_expansion = form_data["form_expansion"]
+    paciente_id = form_data["paciente_id"]
+    paciente_nombre = form_data["paciente_nombre"]
+    paciente_apellido = form_data["paciente_apellido"]
+    paciente_sexo = form_data["paciente_sexo"]
+    paciente_sexo.value = "M" 
+    paciente_fecha = form_data["paciente_fecha"]
+    paciente_historia = form_data["paciente_historia"]
+    default_photo_icon = form_data["default_photo_icon"]
+    photo_preview = form_data["photo_preview"]
+    file_picker = form_data["file_picker"]
+
     pacientes_list = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True)  # Habilitar scroll en la lista de pacientes
-    
-    # Vista previa de la foto y icono por defecto
-    default_photo_icon = ft.Icon(ft.icons.PERSON, size=100, visible=True)
-    photo_preview = ft.Image(width=100, height=100, visible=False)  # Inicialmente oculta
-    file_picker = ft.FilePicker(on_result=on_file_picked)
 
     # Diálogo de edición
     edit_id = ft.TextField(label="ID Paciente", disabled=True)
@@ -207,7 +267,7 @@ def PacientesScreen(page):
         ),
         actions=[
             ft.TextButton("Guardar", on_click=save_edit),
-            ft.TextButton("Cancelar", on_click=lambda e: setattr(edit_dialog, "open", False) or page.update())
+            ft.TextButton("Cancelar", on_click=close_edit_dialog)
         ],
     )
 
@@ -219,32 +279,29 @@ def PacientesScreen(page):
         suffix=ft.IconButton(ft.icons.SEARCH, on_click=on_search)
     )
 
-    # ExpansionTile para el formulario
-    form_expansion = ft.ExpansionTile(
-        title=ft.Text("Agregar nuevo paciente"),
-        controls=[
-            ft.Column(
-                [
-                    ft.Divider(height=10, color=ft.colors.TRANSPARENT),  # Espacio de 10 unidades
-                    ft.Row([paciente_id, paciente_nombre, paciente_apellido], spacing=15),
-                    ft.Row([paciente_sexo, paciente_fecha, paciente_historia], spacing=5),
-                    ft.Row(
-                        [
-                            ft.Column([default_photo_icon, photo_preview], alignment=ft.MainAxisAlignment.CENTER),
-                            ft.Column([
-                                file_picker,
-                                ft.ElevatedButton("Seleccionar Foto", on_click=lambda e: file_picker.pick_files(allow_multiple=False))
-                            ], alignment=ft.MainAxisAlignment.CENTER)
-                        ],
-                        spacing=5
-                    ),
-                    ft.Divider(height=20, color=ft.colors.TRANSPARENT),  # Espacio antes del botón Agregar
-                    ft.Row([ft.ElevatedButton("Agregar", on_click=add_paciente_clicked)], alignment=ft.MainAxisAlignment.CENTER),
-                    ft.Divider(height=20, color=ft.colors.TRANSPARENT)  # Espacio después del botón Agregar
-                ],
-                spacing=10
-            )
-        ]
+    # Diálogo de alerta para mostrar errores
+    alert_dialog = ft.AlertDialog(
+        title=ft.Text("Error"),
+        content=ft.Text(""),
+        actions=[
+            ft.TextButton("OK", on_click=lambda e: setattr(alert_dialog, "open", False) or page.update())
+        ],
+    )
+
+    # Crear el ExpansionPanel solo para el formulario de agregar paciente
+    form_panel = ft.ExpansionPanel(
+        header=ft.ListTile(
+            title=ft.Text("Agregar Nuevo Paciente"),
+            on_click=lambda e: setattr(form_panel, "expanded", not form_panel.expanded) or page.update()  # Alternar expansión
+        ),
+        content=ft.Column([form_expansion]),  # Contenido del formulario
+        expanded=False  # Inicialmente colapsado
+    )
+
+    # Crear el ExpansionPanelList solo con el panel del formulario
+    expansion_panel_list = ft.ExpansionPanelList(
+        controls=[form_panel],
+        on_change=lambda e: page.update()  # Actualizar la página cuando cambie el estado del panel
     )
 
     refresh_pacientes()
@@ -252,22 +309,23 @@ def PacientesScreen(page):
     return ft.Column(
         [
             ft.Text("Gestión de Pacientes", size=24, weight=ft.FontWeight.BOLD),
-            form_expansion,  # Formulario colapsable
-            ft.Divider(height=20, color=ft.colors.TRANSPARENT),  # Espacio después del formulario
+            expansion_panel_list,  # Mostrar el panel del formulario
+            ft.Divider(height=20, color=ft.colors.TRANSPARENT),  # Espacio entre el formulario y la lista
             ft.Row([search_field], alignment=ft.MainAxisAlignment.CENTER),  # Barra de búsqueda
-            ft.Divider(height=20, color=ft.colors.TRANSPARENT),  # Espacio después del buscador
+            ft.Divider(height=20, color=ft.colors.TRANSPARENT),  # Espacio entre la barra de búsqueda y la lista
             ft.Container(
                 content=pacientes_list,
                 expand=True,
                 padding=10,
                 alignment=ft.alignment.top_center
-            ),
+            ),  # Lista de pacientes
             ft.Row([
                 ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda e: change_page(-1)),
                 ft.Text(f"Página {current_page + 1}"),
                 ft.IconButton(ft.icons.ARROW_FORWARD, on_click=lambda e: change_page(1)),
-            ], alignment=ft.MainAxisAlignment.CENTER),
-            edit_dialog
+            ], alignment=ft.MainAxisAlignment.CENTER),  # Controles de paginación
+            edit_dialog,
+            alert_dialog
         ],
         expand=True,
         scroll=ft.ScrollMode.AUTO  # Habilitar scroll en la columna principal

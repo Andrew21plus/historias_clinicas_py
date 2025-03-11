@@ -1,5 +1,5 @@
 from models.tratamiento import Tratamiento
-from dao.database import DB_NAME, get_connection  # Importar get_connection
+from dao.database import  get_connection  # Importar get_connection
 
 def get_all_tratamientos():
    conn = get_connection()  # Usar get_connection

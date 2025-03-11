@@ -7,6 +7,7 @@ from dao.paciente_dao import (
 )
 
 def get_pacientes():
+    """ Obtiene todos los pacientes """
     return get_all_pacientes()
 
 def get_paciente(id_paciente):
@@ -24,3 +25,19 @@ def update_paciente(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_h
 def delete_paciente(id_paciente):
     """ Elimina un paciente de la base de datos """
     delete_paciente_dao(id_paciente)
+
+def cedula_existe(cedula, exclude_id=None):
+    """ Verifica si una cédula ya está registrada """
+    pacientes = get_all_pacientes()
+    for paciente in pacientes:
+        if paciente.id_paciente == cedula and (exclude_id is None or paciente.id_paciente != exclude_id):
+            return True
+    return False
+
+def historia_clinica_existe(historia_clinica, exclude_id=None):
+    """ Verifica si un número de historia clínica ya está registrado """
+    pacientes = get_all_pacientes()
+    for paciente in pacientes:
+        if paciente.num_historia_clinica == historia_clinica and (exclude_id is None or paciente.id_paciente != exclude_id):
+            return True
+    return False
