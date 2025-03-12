@@ -1,21 +1,25 @@
 import flet as ft
 from screens.login_screen import LoginScreen
 from screens.menu_screen import MenuScreen
+from services.usuarios_service import validar_usuario  # Importamos la validación
+
 
 def main(page: ft.Page):
     page.title = "Historias Clínicas"
-    page.window_width = 1200  # Ancho inicial (por si no se maximiza)
-    page.window_height = 800  # Alto inicial (por si no se maximiza)
-    page.window_maximized = True  # Maximizar la ventana al iniciar
-    page.window_resizable = True  # Permitir redimensionar la ventana
+    page.window_width = 1200  # type: ignore
+    page.window_height = 800  # type: ignore
+    page.window_maximized = True  # type: ignore
+    page.window_resizable = True  # type: ignore
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
-    def go_to_menu(e):
-        page.clean()
-        page.add(MenuScreen(page))
+    def go_to_menu(correo, password):
+        if validar_usuario(correo, password)["status"]:
+            page.clean()
+            page.add(MenuScreen(page))
+        else:
+            page.add(ft.Text("Usuario o contraseña incorrectos", color="red"))
 
-    # Mostrar la pantalla de login al inicio
     page.add(LoginScreen(go_to_menu))
 
-# Asegúrate de que la ventana se abra maximizada
+
 ft.app(target=main, view=ft.AppView.FLET_APP)
