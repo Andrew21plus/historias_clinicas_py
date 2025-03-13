@@ -14,13 +14,13 @@ def get_paciente(id_paciente):
     """ Obtiene un paciente por su ID """
     return get_paciente_by_id(id_paciente)
 
-def add_paciente(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto=None):
+def add_paciente(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, id_usuario, foto=None):
     """ Agrega un nuevo paciente, incluyendo la foto si está presente """
-    add_paciente_dao(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto)
+    add_paciente_dao(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, id_usuario, foto)
 
-def update_paciente(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto=None):
+def update_paciente(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, id_usuario, foto=None):
     """ Actualiza los datos de un paciente, incluyendo la foto """
-    update_paciente_dao(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto)
+    update_paciente_dao(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, id_usuario, foto)
 
 def delete_paciente(id_paciente):
     """ Elimina un paciente de la base de datos """

@@ -2,12 +2,13 @@ import flet as ft
 from screens.pacientes_screen import PacientesScreen
 from screens.historia_clinica_screen import HistoriaClinicaScreen
 
-
-def MenuScreen(page: ft.Page, nombre: str, apellido: str, rol: str):
+def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, rol: str):
+    
+    
     # Función para cambiar el contenido principal
     def change_content(index):
         if index == 0:
-            content_area.content = PacientesScreen(page)
+            content_area.content = PacientesScreen(page, id_usuario)  # Pasar id_usuario
         elif index == 1:
             content_area.content = HistoriaClinicaScreen(page)
         page.update()
@@ -18,6 +19,7 @@ def MenuScreen(page: ft.Page, nombre: str, apellido: str, rol: str):
             [
                 ft.Text(f"{nombre} {apellido}", weight=ft.FontWeight.BOLD, size=16),
                 ft.Text(f"Rol: {rol}", italic=True, size=14, color=ft.colors.GREY),
+                ft.Text(f"ID Usuario: {id_usuario}", italic=True, size=14, color=ft.colors.BLUE),  # Mostrar el ID del usuario
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             spacing=5,
@@ -46,7 +48,7 @@ def MenuScreen(page: ft.Page, nombre: str, apellido: str, rol: str):
 
     # Área de contenido principal
     content_area = ft.Container(
-        content=PacientesScreen(page),  # Contenido inicial (Pacientes)
+        content=PacientesScreen(page, id_usuario),  # Contenido inicial (Pacientes)
         expand=True,
         padding=20,
     )

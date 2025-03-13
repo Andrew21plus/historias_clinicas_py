@@ -1,4 +1,3 @@
-# screens/pacientes_screen.py
 import flet as ft
 import base64
 from services.paciente_service import (
@@ -11,7 +10,7 @@ from services.paciente_service import (
 )
 from utils.formulario_paciente import crear_formulario_paciente, validar_cedula_ecuatoriana, validar_fecha
 
-def PacientesScreen(page):
+def PacientesScreen(page: ft.Page, id_usuario: int):
     selected_photo = None  # Variable para almacenar la imagen seleccionada
     existing_photo = None  # Variable para almacenar la foto existente al editar
     current_page = 0  # Página actual de la paginación
@@ -88,6 +87,7 @@ def PacientesScreen(page):
         page.update()
 
     def add_paciente_clicked(e):
+        # Validar campos requeridos
         campos_requeridos = [paciente_id, paciente_nombre, paciente_apellido, paciente_sexo, paciente_fecha, paciente_historia]
         if not validar_campos_requeridos(campos_requeridos):
             return
@@ -120,9 +120,10 @@ def PacientesScreen(page):
                 nombre_mayusculas = paciente_nombre.value.upper()
                 apellido_mayusculas = paciente_apellido.value.upper()
 
+                # Llamar a add_paciente con el id_usuario
                 add_paciente(
                     paciente_id.value, nombre_mayusculas, apellido_mayusculas,
-                    paciente_sexo.value, paciente_fecha.value, paciente_historia.value, encoded_photo
+                    paciente_sexo.value, paciente_fecha.value, paciente_historia.value, encoded_photo, id_usuario
                 )
                 clear_fields()  # Limpiar los campos después de agregar
                 form_panel.expanded = False  # Colapsar el panel del formulario

@@ -9,11 +9,12 @@ def validar_usuario(correo, password):
     print("[login_service] type(user_data):", type(user_data))
 
     if user_data is not None:
-        nombre, apellido, hashed_password, rol = user_data
+        id_usuario, nombre, apellido, hashed_password, rol = user_data
         if bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8")):
             return {
                 "status": True,
                 "message": "Inicio de sesión exitoso",
+                "id_usuario": id_usuario,
                 "nombre": nombre,
                 "apellido": apellido,
                 "correo": correo,

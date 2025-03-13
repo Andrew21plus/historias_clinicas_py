@@ -7,7 +7,7 @@ def get_usuario(correo):
     conn = get_connection()
     c = conn.cursor()
     c.execute(
-        "SELECT nombre, apellido, contrasena, rol FROM Usuarios WHERE correo = ?",
+        "SELECT id_usuario, nombre, apellido, contrasena, rol FROM Usuarios WHERE correo = ?",
         (correo,),
     )
     row = c.fetchone()

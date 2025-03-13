@@ -20,26 +20,26 @@ def get_paciente_by_id(id_paciente):
     conn.close()
     return Paciente(*row) if row else None
 
-def add_paciente(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto=None):
+def add_paciente(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, id_usuario, foto=None):
     """ Agrega un nuevo paciente a la base de datos """
     conn = get_connection()  # Usar get_connection en lugar de sqlite3.connect
     c = conn.cursor()
     c.execute("""
-        INSERT INTO Pacientes (id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto))
+        INSERT INTO Pacientes (id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto, id_usuario)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto, id_usuario))
     conn.commit()
     conn.close()
 
-def update_paciente(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto=None):
+def update_paciente(id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, id_usuario, foto=None):
     """ Actualiza los datos de un paciente """
     conn = get_connection()  # Usar get_connection en lugar de sqlite3.connect
     c = conn.cursor()
     c.execute("""
         UPDATE Pacientes 
-        SET nombre = ?, apellido = ?, sexo = ?, fecha_nacimiento = ?, num_historia_clinica = ?, foto = ?
+        SET nombre = ?, apellido = ?, sexo = ?, fecha_nacimiento = ?, num_historia_clinica = ?, foto = ?, id_usuario = ?
         WHERE id_paciente = ?
-    """, (nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto, id_paciente))
+    """, (nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto, id_usuario, id_paciente))
     conn.commit()
     conn.close()
 

@@ -19,9 +19,9 @@ def main(page: ft.Page):
             nombre = resultado["nombre"]
             apellido = resultado["apellido"]
             rol = resultado["rol"]
-
+            id_usuario = resultado["id_usuario"]
             page.clean()
-            page.add(MenuScreen(page, nombre, apellido, rol))  # Pasar los datos al menú
+            page.add(MenuScreen(page, id_usuario, nombre, apellido, rol))  # Pasar los datos al menú
         else:
             page.add(ft.Text(resultado["message"], color="red"))
 
