@@ -1,5 +1,6 @@
 from dao.paciente_dao import (
     get_all_pacientes,
+    get_pacientes_id_usuario,
     add_paciente as add_paciente_dao,
     update_paciente as update_paciente_dao,
     delete_paciente as delete_paciente_dao,
@@ -10,6 +11,10 @@ from dao.paciente_dao import (
 def get_pacientes():
     """Obtiene todos los pacientes"""
     return get_all_pacientes()
+
+
+def get_pacientes_by_id_usuario(id_usuario):
+    return get_pacientes_id_usuario(id_usuario)
 
 
 def get_paciente(id_paciente):

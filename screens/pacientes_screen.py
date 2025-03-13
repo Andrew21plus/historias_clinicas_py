@@ -4,6 +4,7 @@ import json
 
 from services.paciente_service import (
     get_pacientes,
+    get_pacientes_by_id_usuario,
     add_paciente,
     update_paciente,
     delete_paciente,
@@ -40,7 +41,8 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
 
     def refresh_pacientes():
         pacientes_list.controls.clear()
-        pacientes = get_pacientes()
+        # pacientes = get_pacientes()
+        pacientes = get_pacientes_by_id_usuario(id_usuario)
         print("[pacientes_screen] pacientes:", pacientes)
 
         # Filtrar pacientes por nombre o apellido si hay una consulta de búsqueda

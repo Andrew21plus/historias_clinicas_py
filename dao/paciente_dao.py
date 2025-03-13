@@ -30,6 +30,34 @@ def get_all_pacientes():
     return pacientes
 
 
+def get_pacientes_id_usuario(id_usuario):
+    """Obtiene todos los pacientes de un usuario específico por su id_usuario"""
+    conn = get_connection()  # Usar get_connection en lugar de sqlite3.connect
+    c = conn.cursor()
+    c.execute(
+        "SELECT id_paciente, nombre, apellido, sexo, fecha_nacimiento, num_historia_clinica, foto, id_usuario FROM Pacientes WHERE id_usuario = ?",
+        (id_usuario,),
+    )
+
+    rows = c.fetchall()
+    pacientes = [Paciente(*row) for row in rows]
+    pacientes_dict = [
+        {
+            k: (str(v)[:60] + "..." if len(str(v)) > 60 else str(v))
+            for k, v in paciente.__dict__.items()
+        }
+        for paciente in pacientes
+    ]
+
+    # Imprimimos el contenido con formato JSON
+    print(f"\n\n[pacientes_dao] type pacientes: {type(pacientes)}")
+    print(
+        f"[pacientes_dao] contenido pacientes: {json.dumps(pacientes_dict, indent=2, ensure_ascii=False)}"
+    )
+    conn.close()
+    return pacientes
+
+
 def get_paciente_by_id(id_paciente):
     """Obtiene un paciente por su ID"""
     conn = get_connection()  # Usar get_connection en lugar de sqlite3.connect
