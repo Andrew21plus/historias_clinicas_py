@@ -2,7 +2,8 @@ import flet as ft
 from screens.pacientes_screen import PacientesScreen
 from screens.historia_clinica_screen import HistoriaClinicaScreen
 
-def MenuScreen(page: ft.Page):
+
+def MenuScreen(page: ft.Page, nombre: str, apellido: str, rol: str):
     # Función para cambiar el contenido principal
     def change_content(index):
         if index == 0:
@@ -11,9 +12,24 @@ def MenuScreen(page: ft.Page):
             content_area.content = HistoriaClinicaScreen(page)
         page.update()
 
+    # Información del usuario en el menú lateral
+    user_info = ft.Container(
+        content=ft.Column(
+            [
+                ft.Text(f"{nombre} {apellido}", weight=ft.FontWeight.BOLD, size=16),
+                ft.Text(f"Rol: {rol}", italic=True, size=14, color=ft.colors.GREY),
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=5,
+        ),
+        padding=10,
+    )
+
     # Menú lateral (NavigationDrawer)
     drawer = ft.NavigationDrawer(
         controls=[
+            user_info,  # Mostrar la información del usuario arriba
+            ft.Divider(),  # Separador visual
             ft.NavigationDrawerDestination(
                 label="Pacientes",
                 icon=ft.icons.PEOPLE,

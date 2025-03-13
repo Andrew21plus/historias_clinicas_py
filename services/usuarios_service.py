@@ -14,6 +14,9 @@ def validar_usuario(correo, password):
             return {
                 "status": True,
                 "message": "Inicio de sesión exitoso",
+                "nombre": nombre,
+                "apellido": apellido,
+                "correo": correo,
                 "rol": rol,
             }
         else:

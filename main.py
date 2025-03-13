@@ -13,11 +13,17 @@ def main(page: ft.Page):
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
     def go_to_menu(correo, password):
-        if validar_usuario(correo, password)["status"]:
+        resultado = validar_usuario(correo, password)
+
+        if resultado["status"]:
+            nombre = resultado["nombre"]
+            apellido = resultado["apellido"]
+            rol = resultado["rol"]
+
             page.clean()
-            page.add(MenuScreen(page))
+            page.add(MenuScreen(page, nombre, apellido, rol))  # Pasar los datos al menú
         else:
-            page.add(ft.Text("Usuario o contraseña incorrectos", color="red"))
+            page.add(ft.Text(resultado["message"], color="red"))
 
     page.add(LoginScreen(go_to_menu))
 
