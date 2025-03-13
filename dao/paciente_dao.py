@@ -83,8 +83,8 @@ def update_paciente(
     sexo,
     fecha_nacimiento,
     num_historia_clinica,
-    foto,
     id_usuario,
+    foto,
 ):
     print(
         f"\n\n[paciente_dao] update_paciente: id_paciente: {id_paciente}, nombre: {nombre}, apellido: {apellido}, sexo: {sexo}, fecha_nacimiento: {fecha_nacimiento}, num_historia_clinica: {num_historia_clinica}, id_usuario: {id_usuario}, foto: {foto}"
