@@ -3,7 +3,8 @@ from dao.historia_clinica_dao import (
     add_historia_clinica as add_historia_clinica_dao, 
     update_historia_clinica as update_historia_clinica_dao, 
     delete_historia_clinica as delete_historia_clinica_dao,
-    get_historia_clinica_by_paciente 
+    get_historia_clinica_by_paciente,
+    get_historias_clinicas_by_usuario as get_historias_clinicas_by_usuario_dao
 )
 
 def get_historias_clinicas():
@@ -24,3 +25,7 @@ def update_historia_clinica(id_historia, motivo_consulta, enfermedad_actual, id_
 
 def delete_historia_clinica(id_historia):
     delete_historia_clinica_dao(id_historia)
+
+def get_historias_clinicas_by_usuario(id_usuario):
+    """ Obtiene todas las historias clínicas asociadas a un usuario específico """
+    return get_historias_clinicas_by_usuario_dao(id_usuario)

@@ -53,3 +53,14 @@ def get_historia_clinica_by_paciente(id_paciente):
     row = c.fetchone()
     conn.close()
     return row  # Devuelve la historia clínica si existe, o None si no existe
+
+def get_historias_clinicas_by_usuario(id_usuario):
+    conn = get_connection()  # Obtener la conexión a la base de datos
+    c = conn.cursor()
+    # Consulta para obtener todas las historias clínicas asociadas a un usuario específico
+    c.execute("SELECT * FROM Historias_Clinicas WHERE id_usuario = ?", (id_usuario,))
+    rows = c.fetchall()
+    # Convertir las filas en objetos HistoriaClinica
+    historias = [HistoriaClinica(*row) for row in rows]
+    conn.close()
+    return historias

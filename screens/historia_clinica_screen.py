@@ -1,14 +1,14 @@
 import flet as ft
 from services.historia_clinica_service import (
-    get_historias_clinicas, 
+    get_historias_clinicas_by_usuario,  # Importar la nueva función
     add_historia_clinica, 
     update_historia_clinica, 
     delete_historia_clinica,
-    paciente_tiene_historia  # Importa la nueva función
+    paciente_tiene_historia
 )
-from services.paciente_service import get_paciente, get_pacientes  # Importa la función para obtener todos los pacientes
+from services.paciente_service import get_paciente, get_pacientes
 
-def HistoriaClinicaScreen(page: ft.Page , id_usuario: int):
+def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
     selected_historia = None  # Variable para almacenar la historia clínica seleccionada
     current_page = 0  # Página actual de la paginación
     historias_per_page = 5  # Número de historias clínicas por página
@@ -17,7 +17,8 @@ def HistoriaClinicaScreen(page: ft.Page , id_usuario: int):
 
     def refresh_historias():
         historias_list.controls.clear()
-        historias = get_historias_clinicas()
+        # Obtener historias clínicas filtradas por id_usuario
+        historias = get_historias_clinicas_by_usuario(id_usuario)
         
         # Filtrar historias clínicas por motivo de consulta o enfermedad actual
         if search_query:
@@ -78,7 +79,7 @@ def HistoriaClinicaScreen(page: ft.Page , id_usuario: int):
         if all([historia_paciente.value, historia_motivo.value, historia_enfermedad.value]):
             try:
                 add_historia_clinica(
-                    historia_paciente.value, historia_motivo.value, historia_enfermedad.value,id_usuario
+                    historia_paciente.value, historia_motivo.value, historia_enfermedad.value, id_usuario
                 )
                 clear_fields()
                 refresh_historias()
@@ -107,7 +108,7 @@ def HistoriaClinicaScreen(page: ft.Page , id_usuario: int):
 
     def save_edit(e):
         update_historia_clinica(
-            edit_id.value, edit_motivo.value, edit_enfermedad.value,id_usuario
+            edit_id.value, edit_motivo.value, edit_enfermedad.value, id_usuario
         )
         edit_dialog.open = False
         refresh_historias()
