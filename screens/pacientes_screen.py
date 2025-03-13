@@ -9,7 +9,7 @@ from services.paciente_service import (
     cedula_existe,
     historia_clinica_existe
 )
-from utils.formulario_paciente import crear_formulario_paciente, validar_cedula_ecuatoriana
+from utils.formulario_paciente import crear_formulario_paciente, validar_cedula_ecuatoriana, validar_fecha
 
 def PacientesScreen(page):
     selected_photo = None  # Variable para almacenar la imagen seleccionada
@@ -22,6 +22,13 @@ def PacientesScreen(page):
         alert_dialog.content = ft.Text(message)
         alert_dialog.open = True
         page.update()
+
+    def validar_campos_requeridos(campos):
+        campos_faltantes = [campo for campo in campos if not campo.value]
+        if campos_faltantes:
+            show_alert(f"Por favor, complete los siguientes campos: {', '.join([campo.label for campo in campos_faltantes])}")
+            return False
+        return True
 
     def refresh_pacientes():
         pacientes_list.controls.clear()
@@ -81,6 +88,15 @@ def PacientesScreen(page):
         page.update()
 
     def add_paciente_clicked(e):
+        campos_requeridos = [paciente_id, paciente_nombre, paciente_apellido, paciente_sexo, paciente_fecha, paciente_historia]
+        if not validar_campos_requeridos(campos_requeridos):
+            return
+
+        # Validar el formato de la fecha
+        if not validar_fecha(paciente_fecha.value):
+            show_alert("Formato de fecha inválido. Use dd-mm-yyyy.")
+            return
+
         if not validar_cedula_ecuatoriana(paciente_id.value):
             show_alert("Cédula inválida. Por favor, ingrese una cédula ecuatoriana válida.")
             return
@@ -139,6 +155,15 @@ def PacientesScreen(page):
         page.update()
 
     def save_edit(e):
+        campos_requeridos = [edit_id, edit_nombre, edit_apellido, edit_sexo, edit_fecha, edit_historia]
+        if not validar_campos_requeridos(campos_requeridos):
+            return
+
+        # Validar el formato de la fecha
+        if not validar_fecha(edit_fecha.value):
+            show_alert("Formato de fecha inválido. Use dd-mm-yyyy.")
+            return
+
         if not validar_cedula_ecuatoriana(edit_id.value):
             show_alert("Cédula inválida. Por favor, ingrese una cédula ecuatoriana válida.")
             return
@@ -243,7 +268,7 @@ def PacientesScreen(page):
         label="Sexo",
         options=[ft.dropdown.DropdownOption("M"), ft.dropdown.DropdownOption("F"), ft.dropdown.DropdownOption("O")]
     )
-    edit_fecha = ft.TextField(label="Fecha Nacimiento")
+    edit_fecha = ft.TextField(label="Fecha Nacimiento (dd-mm-yyyy)", hint_text="Ej: 15-05-1990")
     edit_historia = ft.TextField(label="Historia Clínica")
     edit_default_photo_icon = ft.Icon(ft.icons.PERSON, size=100, visible=True)
     edit_photo_preview = ft.Image(width=100, height=100, visible=False)
