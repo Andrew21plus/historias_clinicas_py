@@ -2,7 +2,7 @@ from models.tratamiento import Tratamiento
 from dao.database import  get_connection  # Importar get_connection
 
 def get_all_tratamientos():
-   conn = get_connection()  # Usar get_connection
+    conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("SELECT * FROM Tratamientos")
     rows = c.fetchall()
