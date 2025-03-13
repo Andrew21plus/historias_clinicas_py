@@ -18,24 +18,24 @@ def get_historia_clinica_by_id(id_historia):
     conn.close()
     return HistoriaClinica(*row) if row else None
 
-def add_historia_clinica(id_paciente, motivo_consulta, enfermedad_actual):
+def add_historia_clinica(id_paciente, motivo_consulta, enfermedad_actual, id_usuario):
     conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
-        INSERT INTO Historias_Clinicas (id_paciente, motivo_consulta, enfermedad_actual)
-        VALUES (?, ?, ?)
-    """, (id_paciente, motivo_consulta, enfermedad_actual))
+        INSERT INTO Historias_Clinicas (id_paciente, motivo_consulta, enfermedad_actual, id_usuario)
+        VALUES (?, ?, ?, ?)
+    """, (id_paciente, motivo_consulta, enfermedad_actual,id_usuario))
     conn.commit()
     conn.close()
 
-def update_historia_clinica(id_historia, motivo_consulta, enfermedad_actual):
+def update_historia_clinica(id_historia, motivo_consulta, enfermedad_actual, id_usuario):
     conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("""
         UPDATE Historias_Clinicas 
         SET motivo_consulta = ?, enfermedad_actual = ?
         WHERE id_historia = ?
-    """, (motivo_consulta, enfermedad_actual, id_historia))
+    """, (motivo_consulta, enfermedad_actual, id_historia, id_usuario))
     conn.commit()
     conn.close()
 

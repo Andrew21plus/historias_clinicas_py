@@ -10,7 +10,7 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, rol: 
         if index == 0:
             content_area.content = PacientesScreen(page, id_usuario)  # Pasar id_usuario
         elif index == 1:
-            content_area.content = HistoriaClinicaScreen(page)
+            content_area.content = HistoriaClinicaScreen(page, id_usuario)
         page.update()
 
     # Información del usuario en el menú lateral
