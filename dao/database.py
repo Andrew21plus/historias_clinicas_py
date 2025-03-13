@@ -37,7 +37,7 @@ def init_db():
         fecha_nacimiento DATE NOT NULL,
         num_historia_clinica TEXT UNIQUE NOT NULL,
         foto BLOB,
-        id_usuario TEXT NOT NULL,
+        id_usuario INTEGER NOT NULL,
         FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario) ON DELETE CASCADE
     )"""
     )
@@ -49,7 +49,7 @@ def init_db():
         id_paciente TEXT NOT NULL UNIQUE,
         motivo_consulta TEXT,
         enfermedad_actual TEXT,
-        id_usuario TEXT NOT NULL,
+        id_usuario INTEGER NOT NULL,
         FOREIGN KEY (id_paciente) REFERENCES Pacientes(id_paciente) ON DELETE CASCADE,
         FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario) ON DELETE CASCADE
     )"""
@@ -63,7 +63,7 @@ def init_db():
         fecha DATE NOT NULL,
         hora TIME NOT NULL,
         notas TEXT,
-        id_usuario TEXT NOT NULL,
+        id_usuario INTEGER NOT NULL,
         FOREIGN KEY (id_paciente) REFERENCES Pacientes(id_paciente) ON DELETE CASCADE,
         FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario) ON DELETE CASCADE
     )"""
@@ -79,7 +79,7 @@ def init_db():
         dosis TEXT NOT NULL,
         indicaciones TEXT,
         firmado_por TEXT NOT NULL,
-        id_usuario TEXT NOT NULL,
+        id_usuario INTEGER NOT NULL,
         FOREIGN KEY (id_paciente) REFERENCES Pacientes(id_paciente) ON DELETE CASCADE,
         FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario) ON DELETE CASCADE
     )"""
@@ -121,7 +121,7 @@ def init_db():
         diagnostico TEXT NOT NULL,
         cie TEXT,
         definitivo BOOLEAN NOT NULL CHECK(definitivo IN (0, 1)),
-        id_usuario TEXT NOT NULL,
+        id_usuario INTEGER NOT NULL,
         FOREIGN KEY (id_paciente) REFERENCES Pacientes(id_paciente) ON DELETE CASCADE,
         FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario) ON DELETE CASCADE
     )"""
@@ -143,7 +143,7 @@ def init_db():
         id_paciente TEXT NOT NULL,
         fecha DATE NOT NULL,
         tratamiento TEXT NOT NULL,
-        id_usuario TEXT NOT NULL,
+        id_usuario INTEGER NOT NULL,
         FOREIGN KEY (id_paciente) REFERENCES Pacientes(id_paciente) ON DELETE CASCADE,
         FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario) ON DELETE CASCADE
     )"""
