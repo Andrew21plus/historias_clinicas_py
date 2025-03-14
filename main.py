@@ -20,11 +20,17 @@ def main(page: ft.Page):
             apellido = resultado["apellido"]
             id_usuario = resultado["id_usuario"]
             page.clean()
-            page.add(MenuScreen(page, id_usuario, nombre, apellido))  # Pasar datos al menú
+            page.add(MenuScreen(page, id_usuario, nombre, apellido, go_to_login))  # Pasar datos al menú
         else:
             page.add(ft.Text(resultado["message"], color="red"))
 
-    # Agregar pantalla de login
-    LoginScreen(page, go_to_menu)  # <- PASAMOS `page` AQUÍ
+    def go_to_login():
+        """Vuelve a la pantalla de login"""
+        page.clean()  # Limpiar la página
+        page.drawer = None  # Asegurarse de que no haya un drawer activo
+        LoginScreen(page, go_to_menu)  # Mostrar la pantalla de login
+
+    # Iniciar con la pantalla de login
+    go_to_login()
 
 ft.app(target=main, view=ft.AppView.FLET_APP)

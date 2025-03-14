@@ -2,15 +2,20 @@ import flet as ft
 from screens.pacientes_screen import PacientesScreen
 from screens.historia_clinica_screen import HistoriaClinicaScreen
 
-def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str):
-    
-    
+def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to_login):
+    """Pantalla del menú principal con opciones de navegación y cierre de sesión"""
+
     # Función para cambiar el contenido principal
     def change_content(index):
         if index == 0:
             content_area.content = PacientesScreen(page, id_usuario)  # Pasar id_usuario
         elif index == 1:
             content_area.content = HistoriaClinicaScreen(page, id_usuario)
+        elif index == 2:  # Índice para el botón de cerrar sesión
+            # Limpiar el drawer antes de cerrar sesión
+            page.drawer = None  # Eliminar el NavigationDrawer
+            page.update()  # Actualizar la página
+            go_to_login()  # Volver a la pantalla de login
         page.update()
 
     # Información del usuario en el menú lateral
@@ -40,6 +45,12 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str):
                 label="Historia Clínica",
                 icon=ft.icons.HEALTH_AND_SAFETY,
                 selected_icon=ft.icons.HEALTH_AND_SAFETY_OUTLINED,
+            ),
+            ft.Divider(),  # Separador visual
+            ft.NavigationDrawerDestination(
+                label="Cerrar sesión",
+                icon=ft.icons.LOGOUT,
+                selected_icon=ft.icons.LOGOUT_OUTLINED,
             ),
         ],
         on_change=lambda e: change_content(e.control.selected_index),

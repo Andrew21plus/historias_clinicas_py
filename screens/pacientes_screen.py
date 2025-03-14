@@ -23,6 +23,30 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
     current_page = 0  # Página actual de la paginación
     pacientes_per_page = 5  # Número de pacientes por página
     search_query = ""  # Variable para almacenar la consulta de búsqueda
+    all_pacientes = []  # Lista para almacenar todos los pacientes
+    selected_paciente_id = None  # Variable para almacenar el ID del paciente seleccionado para eliminar
+
+    # Texto dinámico para mostrar el número de página
+    page_number_text = ft.Text(f"Página {current_page + 1}")
+
+    # Diálogo de confirmación para eliminar
+    confirm_delete_dialog = ft.AlertDialog(
+        title=ft.Text("Confirmar eliminación"),
+        content=ft.Text("¿Estás seguro de que deseas eliminar este paciente?"),
+        actions=[
+            ft.TextButton("Sí", on_click=lambda e: confirm_delete(True)),
+            ft.TextButton("No", on_click=lambda e: confirm_delete(False)),
+        ],
+    )
+
+    def confirm_delete(confirmed):
+        """Maneja la confirmación de eliminación."""
+        nonlocal selected_paciente_id
+        confirm_delete_dialog.open = False
+        page.update()
+        if confirmed:
+            remove_paciente(selected_paciente_id)  # Eliminar el paciente
+        selected_paciente_id = None  # Reiniciar el ID del paciente seleccionado
 
     def show_alert(message):
         alert_dialog.content = ft.Text(message)
@@ -39,34 +63,27 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
         return True
 
     def refresh_pacientes():
+        nonlocal all_pacientes
         pacientes_list.controls.clear()
-        # pacientes = get_pacientes()
-        pacientes = get_pacientes_by_id_usuario(id_usuario)
-        #print("[pacientes_screen] pacientes:", pacientes)
+        all_pacientes = get_pacientes_by_id_usuario(id_usuario)
 
         # Filtrar pacientes por nombre o apellido si hay una consulta de búsqueda
         if search_query:
-            pacientes = [
+            all_pacientes = [
                 p
-                for p in pacientes
+                for p in all_pacientes
                 if search_query.lower() in p.nombre.lower()
                 or search_query.lower() in p.apellido.lower()
             ]
 
         start_index = current_page * pacientes_per_page
         end_index = start_index + pacientes_per_page
-        for paciente in pacientes[start_index:end_index]:
+        for paciente in all_pacientes[start_index:end_index]:
             photo_widget = ft.Icon(ft.icons.PERSON, size=100)  # Icono por defecto
-            # print(f"[pacientes_screen] tipo de paciente: {type(paciente)}")
             paciente_dict = {
                 k: (v[:60] if isinstance(v, (str, bytes)) else v)
                 for k, v in paciente.__dict__.items()
             }
-
-            # print(
-            #     f"[pacientes_screen] paciente: {json.dumps(paciente_dict, indent=2, default=str)}"
-            # )
-            # print(f"[pacientes_screen] tipo de paciente_foto:{type(paciente.foto)}")
 
             if paciente.foto:
                 photo_widget = ft.Image(
@@ -103,7 +120,7 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
                                                     ),
                                                     ft.IconButton(
                                                         ft.icons.DELETE,
-                                                        on_click=lambda e, id_paciente=paciente.id_paciente: remove_paciente(
+                                                        on_click=lambda e, id_paciente=paciente.id_paciente: confirm_delete_dialog_handler(
                                                             id_paciente
                                                         ),
                                                     ),
@@ -132,6 +149,21 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
             )
             pacientes_list.controls.append(paciente_card)
         page.update()
+
+    def confirm_delete_dialog_handler(id_paciente):
+        """Abre el diálogo de confirmación para eliminar."""
+        nonlocal selected_paciente_id
+        selected_paciente_id = id_paciente  # Guardar el ID del paciente seleccionado
+        confirm_delete_dialog.open = True
+        page.update()
+
+    def remove_paciente(id_paciente):
+        """Elimina el paciente."""
+        try:
+            delete_paciente(id_paciente)
+            refresh_pacientes()
+        except Exception as ex:
+            show_alert(f"Error al eliminar paciente: {str(ex)}")
 
     def add_paciente_clicked(e):
         # Validar campos requeridos
@@ -175,9 +207,6 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
                 paciente_historia.value,
             ]
         ):
-            # print(
-            #     f"\n\n[pacientes_screen] paciente_id: {paciente_id.value}, paciente_nombre: {paciente_nombre.value}, paciente_apellido: {paciente_apellido.value}, paciente_sexo: {paciente_sexo.value}, paciente_fecha: {paciente_fecha.value}, paciente_historia: {paciente_historia.value}"
-            # )
             encoded_photo = None
             if selected_photo:
                 with open(selected_photo, "rb") as image_file:
@@ -205,13 +234,6 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
                 page.update()  # Forzar la actualización de la interfaz
             except Exception as ex:
                 show_alert(f"Error al agregar paciente: {str(ex)}")
-
-    def remove_paciente(id_paciente):
-        try:
-            delete_paciente(id_paciente)
-            refresh_pacientes()
-        except Exception as ex:
-            show_alert(f"Error al eliminar paciente: {str(ex)}")
 
     def open_edit_dialog(paciente):
         nonlocal selected_photo, existing_photo
@@ -329,11 +351,19 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
         current_page += delta
         if current_page < 0:
             current_page = 0
+        # Verificar que no se exceda el número máximo de páginas
+        max_pages = (len(all_pacientes) + pacientes_per_page - 1) // pacientes_per_page
+        if current_page >= max_pages:
+            current_page = max_pages - 1
+        # Actualizar el texto del número de página
+        page_number_text.value = f"Página {current_page + 1}"
         refresh_pacientes()
 
     def on_search(e):
-        nonlocal search_query
+        nonlocal search_query, current_page
         search_query = search_field.value
+        current_page = 0  # Reiniciar la página a 0 al realizar una nueva búsqueda
+        page_number_text.value = f"Página {current_page + 1}"  # Actualizar el texto del número de página
         refresh_pacientes()
 
     # Crear el formulario desde utils
@@ -470,7 +500,7 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
                     ft.IconButton(
                         ft.icons.ARROW_BACK, on_click=lambda e: change_page(-1)
                     ),
-                    ft.Text(f"Página {current_page + 1}"),
+                    page_number_text,  # Mostrar el número de página actual
                     ft.IconButton(
                         ft.icons.ARROW_FORWARD, on_click=lambda e: change_page(1)
                     ),
@@ -479,6 +509,7 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
             ),  # Controles de paginación
             edit_dialog,
             alert_dialog,
+            confirm_delete_dialog,  # Diálogo de confirmación para eliminar
         ],
         expand=True,
         scroll=ft.ScrollMode.AUTO,  # Habilitar scroll en la columna principal

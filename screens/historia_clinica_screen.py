@@ -14,22 +14,45 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
     historias_per_page = 5  # Número de historias clínicas por página
     search_query = ""  # Variable para almacenar la consulta de búsqueda
     pacientes = get_pacientes()  # Obtener todos los pacientes
+    all_historias = []  # Lista para almacenar todas las historias clínicas
+
+    # Texto dinámico para mostrar el número de página
+    page_number_text = ft.Text(f"Página {current_page + 1}")
+
+    # Diálogo de confirmación para eliminar
+    confirm_delete_dialog = ft.AlertDialog(
+        title=ft.Text("Confirmar eliminación"),
+        content=ft.Text("¿Estás seguro de que deseas eliminar esta historia clínica?"),
+        actions=[
+            ft.TextButton("Sí", on_click=lambda e: confirm_delete(True)),
+            ft.TextButton("No", on_click=lambda e: confirm_delete(False)),
+        ],
+    )
+
+    def confirm_delete(confirmed):
+        """Maneja la confirmación de eliminación."""
+        confirm_delete_dialog.open = False
+        page.update()
+        if confirmed:
+            remove_historia(selected_historia.id_historia)  # Eliminar la historia clínica
+        selected_historia = None  # Reiniciar la historia seleccionada
 
     def refresh_historias():
+        nonlocal all_historias
         historias_list.controls.clear()
-        # Obtener historias clínicas filtradas por id_usuario
-        historias = get_historias_clinicas_by_usuario(id_usuario)
+        # Obtener todas las historias clínicas filtradas por id_usuario
+        all_historias = get_historias_clinicas_by_usuario(id_usuario)
         
         # Filtrar historias clínicas por motivo de consulta o enfermedad actual
         if search_query:
-            historias = [
-                h for h in historias
+            all_historias = [
+                h for h in all_historias
                 if search_query.lower() in h.motivo_consulta.lower() or search_query.lower() in h.enfermedad_actual.lower()
             ]
         
         start_index = current_page * historias_per_page
         end_index = start_index + historias_per_page
-        for historia in historias[start_index:end_index]:
+        for historia in all_historias[start_index:end_index]:
             # Obtener los datos del paciente asociado a la historia clínica
             paciente = get_paciente(historia.id_paciente)
             if paciente:
@@ -54,7 +77,7 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                                     ft.Text(f"Paciente: {paciente_nombre} {paciente_apellido}", weight=ft.FontWeight.BOLD, expand=True),
                                     ft.Row([
                                         ft.IconButton(ft.icons.EDIT, on_click=lambda e, h=historia: open_edit_dialog(h)),
-                                        ft.IconButton(ft.icons.DELETE, on_click=lambda e, id_historia=historia.id_historia: remove_historia(id_historia))
+                                        ft.IconButton(ft.icons.DELETE, on_click=lambda e, h=historia: confirm_delete_dialog_handler(h))
                                     ])
                                 ],
                                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN
@@ -75,6 +98,18 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
             historias_list.controls.append(historia_card)
         page.update()
 
+    def confirm_delete_dialog_handler(historia):
+        """Abre el diálogo de confirmación para eliminar."""
+        nonlocal selected_historia
+        selected_historia = historia  # Guardar la historia clínica seleccionada
+        confirm_delete_dialog.open = True
+        page.update()
+
+    def remove_historia(id_historia):
+        """Elimina la historia clínica."""
+        delete_historia_clinica(id_historia)
+        refresh_historias()
+
     def add_historia_clicked(e):
         if all([historia_paciente.value, historia_motivo.value, historia_enfermedad.value]):
             try:
@@ -91,10 +126,6 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                 page.snack_bar = ft.SnackBar(content=ft.Text(str(e)))
                 page.snack_bar.open = True
                 page.update()
-
-    def remove_historia(id_historia):
-        delete_historia_clinica(id_historia)
-        refresh_historias()
 
     def open_edit_dialog(historia):
         nonlocal selected_historia
@@ -124,11 +155,19 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
         current_page += delta
         if current_page < 0:
             current_page = 0
+        # Verificar que no se exceda el número máximo de páginas
+        max_pages = (len(all_historias) + historias_per_page - 1) // historias_per_page
+        if current_page >= max_pages:
+            current_page = max_pages - 1
+        # Actualizar el texto del número de página
+        page_number_text.value = f"Página {current_page + 1}"
         refresh_historias()
 
     def on_search(e):
-        nonlocal search_query
+        nonlocal search_query, current_page
         search_query = search_field.value
+        current_page = 0  # Reiniciar la página a 0 al realizar una nueva búsqueda
+        page_number_text.value = f"Página {current_page + 1}"  # Actualizar el texto del número de página
         refresh_historias()
 
     def on_paciente_search(e):
@@ -229,6 +268,16 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
         ]
     )
 
+    # Controles de paginación
+    pagination_controls = ft.Row(
+        [
+            ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda e: change_page(-1)),
+            page_number_text,  # Texto dinámico para mostrar el número de página
+            ft.IconButton(ft.icons.ARROW_FORWARD, on_click=lambda e: change_page(1)),
+        ],
+        alignment=ft.MainAxisAlignment.CENTER
+    )
+
     refresh_historias()
 
     return ft.Column(
@@ -244,12 +293,9 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                 padding=10,
                 alignment=ft.alignment.top_center
             ),
-            ft.Row([
-                ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda e: change_page(-1)),
-                ft.Text(f"Página {current_page + 1}"),
-                ft.IconButton(ft.icons.ARROW_FORWARD, on_click=lambda e: change_page(1)),
-            ], alignment=ft.MainAxisAlignment.CENTER),
-            edit_dialog
+            pagination_controls,  # Controles de paginación
+            edit_dialog,
+            confirm_delete_dialog  # Diálogo de confirmación para eliminar
         ],
         expand=True,
         scroll=ft.ScrollMode.AUTO  # Habilitar scroll en la columna principal
