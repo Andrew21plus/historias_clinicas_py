@@ -21,11 +21,11 @@ def get_all_pacientes():
         for paciente in pacientes
     ]
 
-    # Imprimimos el contenido con formato JSON
-    print(f"\n\n[pacientes_dao] type pacientes: {type(pacientes)}")
-    print(
-        f"[pacientes_dao] contenido pacientes: {json.dumps(pacientes_dict, indent=2, ensure_ascii=False)}"
-    )
+    # # Imprimimos el contenido con formato JSON
+    # print(f"\n\n[pacientes_dao] type pacientes: {type(pacientes)}")
+    # print(
+    #     f"[pacientes_dao] contenido pacientes: {json.dumps(pacientes_dict, indent=2, ensure_ascii=False)}"
+    # )
     conn.close()
     return pacientes
 
@@ -50,10 +50,10 @@ def get_pacientes_id_usuario(id_usuario):
     ]
 
     # Imprimimos el contenido con formato JSON
-    print(f"\n\n[pacientes_dao] type pacientes: {type(pacientes)}")
-    print(
-        f"[pacientes_dao] contenido pacientes: {json.dumps(pacientes_dict, indent=2, ensure_ascii=False)}"
-    )
+    # print(f"\n\n[pacientes_dao] type pacientes: {type(pacientes)}")
+    # print(
+    #     f"[pacientes_dao] contenido pacientes: {json.dumps(pacientes_dict, indent=2, ensure_ascii=False)}"
+    # )
     conn.close()
     return pacientes
 
@@ -78,9 +78,9 @@ def add_paciente(
     foto,
     id_usuario,
 ):
-    print(
-        f"\n\n[paciente_dao] Valores: id_paciente: {id_paciente}, nombre: {nombre}, apellido: {apellido}, sexo: {sexo}, fecha_nacimiento: {fecha_nacimiento}, num_historia_clinica: {num_historia_clinica}, id_usuario: {id_usuario}, foto: {foto}"
-    )
+    # print(
+    #     f"\n\n[paciente_dao] Valores: id_paciente: {id_paciente}, nombre: {nombre}, apellido: {apellido}, sexo: {sexo}, fecha_nacimiento: {fecha_nacimiento}, num_historia_clinica: {num_historia_clinica}, id_usuario: {id_usuario}, foto: {foto}"
+    # )
     """Agrega un nuevo paciente a la base de datos"""
     conn = get_connection()  # Usar get_connection en lugar de sqlite3.connect
     c = conn.cursor()
@@ -114,9 +114,9 @@ def update_paciente(
     id_usuario,
     foto,
 ):
-    print(
-        f"\n\n[paciente_dao] update_paciente: id_paciente: {id_paciente}, nombre: {nombre}, apellido: {apellido}, sexo: {sexo}, fecha_nacimiento: {fecha_nacimiento}, num_historia_clinica: {num_historia_clinica}, id_usuario: {id_usuario}, foto: {foto}"
-    )
+    # print(
+    #     f"\n\n[paciente_dao] update_paciente: id_paciente: {id_paciente}, nombre: {nombre}, apellido: {apellido}, sexo: {sexo}, fecha_nacimiento: {fecha_nacimiento}, num_historia_clinica: {num_historia_clinica}, id_usuario: {id_usuario}, foto: {foto}"
+    # )
     """Actualiza los datos de un paciente"""
     conn = get_connection()  # Usar get_connection en lugar de sqlite3.connect
     c = conn.cursor()

@@ -5,8 +5,8 @@ import bcrypt
 def validar_usuario(correo, password):
     """Valida si el usuario y contraseña son correctos"""
     user_data = get_usuario(correo)
-    print("[login_service] user_data:", user_data)
-    print("[login_service] type(user_data):", type(user_data))
+    #print("[login_service] user_data:", user_data)
+    #print("[login_service] type(user_data):", type(user_data))
 
     if user_data is not None:
         id_usuario, nombre, apellido, hashed_password, rol = user_data

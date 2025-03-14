@@ -3,7 +3,6 @@ import base64
 import json
 
 from services.paciente_service import (
-    get_pacientes,
     get_pacientes_by_id_usuario,
     add_paciente,
     update_paciente,
@@ -43,7 +42,7 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
         pacientes_list.controls.clear()
         # pacientes = get_pacientes()
         pacientes = get_pacientes_by_id_usuario(id_usuario)
-        print("[pacientes_screen] pacientes:", pacientes)
+        #print("[pacientes_screen] pacientes:", pacientes)
 
         # Filtrar pacientes por nombre o apellido si hay una consulta de búsqueda
         if search_query:
@@ -58,16 +57,16 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
         end_index = start_index + pacientes_per_page
         for paciente in pacientes[start_index:end_index]:
             photo_widget = ft.Icon(ft.icons.PERSON, size=100)  # Icono por defecto
-            print(f"[pacientes_screen] tipo de paciente: {type(paciente)}")
+            # print(f"[pacientes_screen] tipo de paciente: {type(paciente)}")
             paciente_dict = {
                 k: (v[:60] if isinstance(v, (str, bytes)) else v)
                 for k, v in paciente.__dict__.items()
             }
 
-            print(
-                f"[pacientes_screen] paciente: {json.dumps(paciente_dict, indent=2, default=str)}"
-            )
-            print(f"[pacientes_screen] tipo de paciente_foto:{type(paciente.foto)}")
+            # print(
+            #     f"[pacientes_screen] paciente: {json.dumps(paciente_dict, indent=2, default=str)}"
+            # )
+            # print(f"[pacientes_screen] tipo de paciente_foto:{type(paciente.foto)}")
 
             if paciente.foto:
                 photo_widget = ft.Image(
@@ -176,9 +175,9 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
                 paciente_historia.value,
             ]
         ):
-            print(
-                f"\n\n[pacientes_screen] paciente_id: {paciente_id.value}, paciente_nombre: {paciente_nombre.value}, paciente_apellido: {paciente_apellido.value}, paciente_sexo: {paciente_sexo.value}, paciente_fecha: {paciente_fecha.value}, paciente_historia: {paciente_historia.value}"
-            )
+            # print(
+            #     f"\n\n[pacientes_screen] paciente_id: {paciente_id.value}, paciente_nombre: {paciente_nombre.value}, paciente_apellido: {paciente_apellido.value}, paciente_sexo: {paciente_sexo.value}, paciente_fecha: {paciente_fecha.value}, paciente_historia: {paciente_historia.value}"
+            # )
             encoded_photo = None
             if selected_photo:
                 with open(selected_photo, "rb") as image_file:
