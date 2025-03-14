@@ -2,7 +2,7 @@ import flet as ft
 from screens.pacientes_screen import PacientesScreen
 from screens.historia_clinica_screen import HistoriaClinicaScreen
 
-def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, rol: str):
+def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str):
     
     
     # Función para cambiar el contenido principal
@@ -18,7 +18,6 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, rol: 
         content=ft.Column(
             [
                 ft.Text(f"{nombre} {apellido}", weight=ft.FontWeight.BOLD, size=16),
-                ft.Text(f"Rol: {rol}", italic=True, size=14, color=ft.colors.GREY),
                 ft.Text(f"ID Usuario: {id_usuario}", italic=True, size=14, color=ft.colors.BLUE),  # Mostrar el ID del usuario
             ],
             alignment=ft.MainAxisAlignment.CENTER,

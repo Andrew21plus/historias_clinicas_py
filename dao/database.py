@@ -22,8 +22,7 @@ def init_db():
         nombre TEXT NOT NULL,
         apellido TEXT NOT NULL,
         correo TEXT UNIQUE NOT NULL,
-        contrasena TEXT NOT NULL,
-        rol TEXT CHECK(rol IN ('Administrador', 'Doctor', 'Enfermero')) NOT NULL
+        contrasena TEXT NOT NULL
     )"""
     )
 

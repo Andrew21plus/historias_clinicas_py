@@ -35,7 +35,7 @@ def add_paciente(
     # print(
     #     f"\n\n[paciente_service] Valores: id_paciente_service: {id_paciente}, nombre: {nombre}, apellido: {apellido}, sexo: {sexo}, fecha_nacimiento: {fecha_nacimiento}, num_historia_clinica: {num_historia_clinica}, id_usuario: {id_usuario}, foto: {foto}"
     # )
-    print("             [paciente_service] Agregando paciente")
+    # print("             [paciente_service] Agregando paciente")
     """ Agrega un nuevo paciente, incluyendo la foto si está presente """
     add_paciente_dao(
         id_paciente,
