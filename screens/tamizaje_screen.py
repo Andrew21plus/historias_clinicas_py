@@ -12,6 +12,7 @@ from services.signo_vital_service import (
     delete_signo_vital,
 )
 from services.paciente_service import get_paciente, get_pacientes_by_id_usuario
+from services.historia_clinica_service import paciente_tiene_historia  # Importar la función de verificación
 from utils.formulario_tamizaje import crear_formulario_tamizaje
 
 
@@ -21,14 +22,14 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
     tamizajes_per_page = 5  # Número de tamizajes por página
     search_query = ""  # Variable para almacenar la consulta de búsqueda
     all_tamizajes = []  # Lista para almacenar todos los tamizajes
-
+    
     # Texto dinámico para mostrar el número de página
     page_number_text = ft.Text(f"Página {current_page + 1}")
 
     # Diálogo de confirmación para eliminar
     confirm_delete_dialog = ft.AlertDialog(
         title=ft.Text("Confirmar eliminación"),
-        content=ft.Text("¿Estás seguro de que deseas eliminar este tamizaje?"),
+        content=ft.Text("¿Estás seguro de que deseas eliminar todos los antecedentes y signos vitales de este paciente?"),
         actions=[
             ft.TextButton("Sí", on_click=lambda e: confirm_delete(True)),
             ft.TextButton("No", on_click=lambda e: confirm_delete(False)),
@@ -83,12 +84,18 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
             remove_tamizaje(selected_tamizaje)
         selected_tamizaje = None  # Reiniciar el tamizaje seleccionado
 
-    def remove_tamizaje(tamizaje):
-        """Elimina el tamizaje."""
-        if hasattr(tamizaje, "tipo"):  # Si es un antecedente médico
-            delete_antecedente_medico(tamizaje.id_antecedente)
-        else:  # Si es un signo vital
-            delete_signo_vital(tamizaje.id_signo)
+    def remove_tamizaje(paciente):
+        """Elimina todos los antecedentes médicos y signos vitales asociados al paciente."""
+        # Eliminar todos los antecedentes médicos del paciente
+        antecedentes = get_antecedentes_medicos_by_paciente(paciente.id_paciente, id_usuario)
+        for antecedente in antecedentes:
+            delete_antecedente_medico(antecedente.id_antecedente)
+
+        # Eliminar todos los signos vitales del paciente
+        signos_vitales = get_signos_vitales_by_paciente(paciente.id_paciente, id_usuario)
+        for signo in signos_vitales:
+            delete_signo_vital(signo.id_signo)
+
         refresh_tamizajes()
 
     def refresh_tamizajes():
@@ -118,7 +125,7 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
             all_tamizajes = [
                 t for t in all_tamizajes
                 if search_query.lower() in t["paciente"].nombre.lower() or
-                   search_query.lower() in t["paciente"].apellido.lower()
+                search_query.lower() in t["paciente"].apellido.lower()
             ]
 
         # Paginación
@@ -142,7 +149,6 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                         ft.Row(
                             [
                                 ft.IconButton(ft.icons.EDIT, on_click=lambda e, t=antecedente: open_edit_dialog(t)),
-                                ft.IconButton(ft.icons.DELETE, on_click=lambda e, t=antecedente: confirm_delete_dialog_handler(t))
                             ],
                             alignment=ft.MainAxisAlignment.END
                         ),
@@ -164,7 +170,6 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                         ft.Row(
                             [
                                 ft.IconButton(ft.icons.EDIT, on_click=lambda e, t=signo: open_edit_dialog(t)),
-                                ft.IconButton(ft.icons.DELETE, on_click=lambda e, t=signo: confirm_delete_dialog_handler(t))
                             ],
                             alignment=ft.MainAxisAlignment.END
                         ),
@@ -184,18 +189,31 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                 )
                 contenido.controls.append(signos_expansion)
 
+            # Botón de eliminar a nivel de paciente
+            eliminar_button = ft.IconButton(
+                ft.icons.DELETE,
+                on_click=lambda e, p=paciente: confirm_delete_dialog_handler(p),
+                tooltip="Eliminar todos los antecedentes y signos vitales del paciente"
+            )
+
             tamizaje_card = ft.ExpansionTile(
-                title=ft.Text(f"Paciente: {paciente.nombre} {paciente.apellido}", weight=ft.FontWeight.BOLD),
+                title=ft.Row(
+                    [
+                        ft.Text(f"Paciente: {paciente.nombre} {paciente.apellido}", weight=ft.FontWeight.BOLD),
+                        eliminar_button,  # Botón de eliminar a nivel de paciente
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                ),
                 controls=[contenido],
             )
 
             tamizajes_list.controls.append(tamizaje_card)
         page.update()
 
-    def confirm_delete_dialog_handler(tamizaje):
-        """Abre el diálogo de confirmación para eliminar."""
+    def confirm_delete_dialog_handler(paciente):
+        """Abre el diálogo de confirmación para eliminar todos los antecedentes y signos vitales del paciente."""
         nonlocal selected_tamizaje
-        selected_tamizaje = tamizaje  # Guardar el tamizaje seleccionado
+        selected_tamizaje = paciente  # Guardar el paciente seleccionado
         confirm_delete_dialog.open = True
         page.update()
 
@@ -203,8 +221,13 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
         """Agrega un nuevo tamizaje (antecedente médico o signo vital)."""
         if all([tamizaje_paciente.value, tamizaje_tipo.value, tamizaje_descripcion.value, tamizaje_fecha.value, tamizaje_presion_arterial.value, tamizaje_frecuencia_cardiaca.value, tamizaje_frecuencia_respiratoria.value, tamizaje_temperatura.value, tamizaje_peso.value, tamizaje_talla.value]):
             try:
-                # Verificar si el paciente ya tiene un tamizaje
+                # Verificar si el paciente tiene una historia clínica
                 paciente_id = tamizaje_paciente.value
+                if not paciente_tiene_historia(paciente_id):  # Usar la función de verificación
+                    show_alert("Este paciente no tiene una historia clínica. Registre una historia clínica primero.")  # Mostrar alerta
+                    return  # Salir de la función si el paciente no tiene una historia clínica
+
+                # Verificar si el paciente ya tiene un tamizaje
                 if paciente_tiene_tamizaje(paciente_id, all_tamizajes):  # Usar la función de validación del formulario
                     show_alert("Este paciente ya tiene un tamizaje.")  # Mostrar alerta
                     return  # Salir de la función si el paciente ya tiene un tamizaje
@@ -334,6 +357,11 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
     def select_paciente(paciente):
         """Selecciona un paciente y completa el campo de ID."""
         nonlocal tamizaje_paciente, paciente_search_field, paciente_results
+
+        # Verificar si el paciente tiene una historia clínica
+        if not paciente_tiene_historia(paciente.id_paciente):  # Usar la función de verificación
+            show_alert("Este paciente no tiene una historia clínica. Registre una historia clínica primero.")  # Mostrar alerta
+            return  # Salir de la función si el paciente no tiene una historia clínica
 
         # Verificar si el paciente ya tiene un tamizaje
         if paciente_tiene_tamizaje(paciente.id_paciente, all_tamizajes):  # Usar la función de validación del formulario

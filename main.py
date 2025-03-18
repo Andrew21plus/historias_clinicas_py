@@ -11,7 +11,7 @@ def main(page: ft.Page):
     page.window_resizable = True  # type: ignore
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
-    def go_to_menu(correo, password):
+    def go_to_menu(correo, password, mostrar_mensaje_temporal):
         """Valida el usuario y navega al menú si es correcto"""
         resultado = validar_usuario(correo, password)
 
@@ -19,16 +19,18 @@ def main(page: ft.Page):
             nombre = resultado["nombre"]
             apellido = resultado["apellido"]
             id_usuario = resultado["id_usuario"]
-            page.clean()
+            page.clean()  # Limpiar la página actual
             page.add(MenuScreen(page, id_usuario, nombre, apellido, go_to_login))  # Pasar datos al menú
         else:
-            page.add(ft.Text(resultado["message"], color="red"))
+            # Mostrar mensaje de error en la pantalla de login
+            mostrar_mensaje_temporal(resultado["message"], color="red")
 
     def go_to_login():
         """Vuelve a la pantalla de login"""
         page.clean()  # Limpiar la página
         page.drawer = None  # Asegurarse de que no haya un drawer activo
-        LoginScreen(page, go_to_menu)  # Mostrar la pantalla de login
+        login_screen = LoginScreen(page, go_to_menu)  # Obtener la pantalla de login
+        page.add(login_screen)  # Mostrar la pantalla de login
 
     # Iniciar con la pantalla de login
     go_to_login()
