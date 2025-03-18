@@ -45,3 +45,26 @@ def delete_antecedente_medico(id_antecedente):
     c.execute("DELETE FROM Antecedentes_Medicos WHERE id_antecedente = ?", (id_antecedente,))
     conn.commit()
     conn.close()
+
+def get_antecedentes_medicos_by_paciente(id_paciente, id_usuario):
+    """
+    Obtiene todos los antecedentes médicos de un paciente específico asociados al usuario logueado.
+    
+    Args:
+        id_paciente (str): El ID del paciente.
+        id_usuario (int): El ID del usuario logueado.
+    
+    Returns:
+        list[AntecedenteMedico]: Una lista de objetos AntecedenteMedico.
+    """
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("""
+        SELECT am.* 
+        FROM Antecedentes_Medicos am
+        JOIN Pacientes p ON am.id_paciente = p.id_paciente
+        WHERE am.id_paciente = ? AND p.id_usuario = ?
+    """, (id_paciente, id_usuario))
+    rows = c.fetchall()
+    conn.close()
+    return [AntecedenteMedico(*row) for row in rows]

@@ -45,3 +45,26 @@ def delete_signo_vital(id_signo):
     c.execute("DELETE FROM Signos_Vitales WHERE id_signo = ?", (id_signo,))
     conn.commit()
     conn.close()
+
+def get_signos_vitales_by_paciente(id_paciente, id_usuario):
+    """
+    Obtiene todos los signos vitales de un paciente específico asociados al usuario logueado.
+    
+    Args:
+        id_paciente (str): El ID del paciente.
+        id_usuario (int): El ID del usuario logueado.
+    
+    Returns:
+        list[SignoVital]: Una lista de objetos SignoVital.
+    """
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("""
+        SELECT sv.* 
+        FROM Signos_Vitales sv
+        JOIN Pacientes p ON sv.id_paciente = p.id_paciente
+        WHERE sv.id_paciente = ? AND p.id_usuario = ?
+    """, (id_paciente, id_usuario))
+    rows = c.fetchall()
+    conn.close()
+    return [SignoVital(*row) for row in rows]

@@ -1,6 +1,7 @@
 import flet as ft
 from screens.pacientes_screen import PacientesScreen
 from screens.historia_clinica_screen import HistoriaClinicaScreen
+from screens.tamizaje_screen  import TamizajeScreen
 
 def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to_login):
     """Pantalla del menú principal con opciones de navegación y cierre de sesión"""
@@ -11,7 +12,9 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to
             content_area.content = PacientesScreen(page, id_usuario)  # Pasar id_usuario
         elif index == 1:
             content_area.content = HistoriaClinicaScreen(page, id_usuario)
-        elif index == 2:  # Índice para el botón de cerrar sesión
+        elif index == 2:
+            content_area.content = TamizajeScreen(page, id_usuario)  # Nueva pantalla de Tamizaje
+        elif index == 3:  # Índice para el botón de cerrar sesión
             # Limpiar el drawer antes de cerrar sesión
             page.drawer = None  # Eliminar el NavigationDrawer
             page.update()  # Actualizar la página
@@ -45,6 +48,11 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to
                 label="Historia Clínica",
                 icon=ft.icons.HEALTH_AND_SAFETY,
                 selected_icon=ft.icons.HEALTH_AND_SAFETY_OUTLINED,
+            ),
+            ft.NavigationDrawerDestination(
+                label="Tamizaje",
+                icon=ft.icons.MONITOR_HEART,  # Icono relacionado con signos vitales
+                selected_icon=ft.icons.MONITOR_HEART_OUTLINED,
             ),
             ft.Divider(),  # Separador visual
             ft.NavigationDrawerDestination(
