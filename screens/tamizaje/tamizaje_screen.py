@@ -1,20 +1,16 @@
 import flet as ft
-from services.antecedente_medico_service import (
-    get_antecedentes_medicos_by_paciente,
-    add_antecedente_medico,
-    update_antecedente_medico,
-    delete_antecedente_medico,
+from .tamizaje_crud import (
+    obtener_tamizajes,
+    eliminar_tamizaje,
+    agregar_tamizaje,
+    agregar_signo_vital,
+    actualizar_tamizaje,
+    paciente_tiene_tamizaje,
 )
-from services.signo_vital_service import (
-    get_signos_vitales_by_paciente,
-    add_signo_vital,
-    update_signo_vital,
-    delete_signo_vital,
-)
-from services.paciente_service import get_paciente, get_pacientes_by_id_usuario
-from services.historia_clinica_service import paciente_tiene_historia  # Importar la función de verificación
+from .tamizaje_ui import crear_tamizaje_ui
 from utils.formulario_tamizaje import crear_formulario_tamizaje
-
+from services.paciente_service import get_pacientes_by_id_usuario
+from services.historia_clinica_service import paciente_tiene_historia
 
 def TamizajeScreen(page: ft.Page, id_usuario: int):
     selected_tamizaje = None  # Variable para almacenar el tamizaje seleccionado
@@ -22,52 +18,6 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
     tamizajes_per_page = 5  # Número de tamizajes por página
     search_query = ""  # Variable para almacenar la consulta de búsqueda
     all_tamizajes = []  # Lista para almacenar todos los tamizajes
-    
-    # Texto dinámico para mostrar el número de página
-    page_number_text = ft.Text(f"Página {current_page + 1}")
-
-    # Diálogo de confirmación para eliminar
-    confirm_delete_dialog = ft.AlertDialog(
-        title=ft.Text("Confirmar eliminación"),
-        content=ft.Text("¿Estás seguro de que deseas eliminar todos los antecedentes y signos vitales de este paciente?"),
-        actions=[
-            ft.TextButton("Sí", on_click=lambda e: confirm_delete(True)),
-            ft.TextButton("No", on_click=lambda e: confirm_delete(False)),
-        ],
-    )
-
-    # Diálogo para agregar nuevos signos vitales
-    add_signo_dialog = ft.AlertDialog(
-        title=ft.Text("Agregar nuevo signo vital"),
-        content=ft.Column(
-            [
-                ft.TextField(label="Fecha", expand=True),
-                ft.TextField(label="Presión arterial", expand=True),
-                ft.TextField(label="Frecuencia cardíaca", expand=True),
-                ft.TextField(label="Frecuencia respiratoria", expand=True),
-                ft.TextField(label="Temperatura", expand=True),
-                ft.TextField(label="Peso", expand=True),
-                ft.TextField(label="Talla", expand=True),
-            ],
-            spacing=10
-        ),
-        actions=[
-            ft.TextButton("Agregar", on_click=lambda e: add_signo_vital_clicked(e)),
-            ft.TextButton("Cancelar", on_click=lambda e: setattr(add_signo_dialog, "open", False) or page.update())
-        ],
-    )
-
-    # Diálogo de alerta para mostrar errores
-    alert_dialog = ft.AlertDialog(
-        title=ft.Text("Error"),
-        content=ft.Text(""),
-        actions=[
-            ft.TextButton(
-                "OK",
-                on_click=lambda e: setattr(alert_dialog, "open", False) or page.update(),
-            )
-        ],
-    )
 
     def show_alert(message):
         """Muestra un diálogo de alerta con el mensaje proporcionado."""
@@ -86,47 +36,14 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
 
     def remove_tamizaje(paciente):
         """Elimina todos los antecedentes médicos y signos vitales asociados al paciente."""
-        # Eliminar todos los antecedentes médicos del paciente
-        antecedentes = get_antecedentes_medicos_by_paciente(paciente.id_paciente, id_usuario)
-        for antecedente in antecedentes:
-            delete_antecedente_medico(antecedente.id_antecedente)
-
-        # Eliminar todos los signos vitales del paciente
-        signos_vitales = get_signos_vitales_by_paciente(paciente.id_paciente, id_usuario)
-        for signo in signos_vitales:
-            delete_signo_vital(signo.id_signo)
-
+        eliminar_tamizaje(paciente, id_usuario)  # Usar la función de tamizaje_crud
         refresh_tamizajes()
 
     def refresh_tamizajes():
         """Actualiza la lista de tamizajes (antecedentes médicos y signos vitales)."""
         nonlocal all_tamizajes
         tamizajes_list.controls.clear()
-        all_tamizajes = []
-
-        # Obtener todos los pacientes asociados al usuario
-        pacientes = get_pacientes_by_id_usuario(id_usuario)
-
-        # Obtener antecedentes médicos y signos vitales para cada paciente
-        for paciente in pacientes:
-            antecedentes = get_antecedentes_medicos_by_paciente(paciente.id_paciente, id_usuario)
-            signos_vitales = get_signos_vitales_by_paciente(paciente.id_paciente, id_usuario)
-
-            # Si el paciente tiene antecedentes o signos, agregarlo a la lista
-            if antecedentes or signos_vitales:
-                all_tamizajes.append({
-                    "paciente": paciente,
-                    "antecedentes": antecedentes,
-                    "signos_vitales": signos_vitales
-                })
-
-        # Filtrar tamizajes por nombre o apellido del paciente (si hay una búsqueda)
-        if search_query:
-            all_tamizajes = [
-                t for t in all_tamizajes
-                if search_query.lower() in t["paciente"].nombre.lower() or
-                search_query.lower() in t["paciente"].apellido.lower()
-            ]
+        all_tamizajes = obtener_tamizajes(id_usuario, search_query)  # Usar la función de tamizaje_crud
 
         # Paginación
         start_index = current_page * tamizajes_per_page
@@ -221,25 +138,26 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
         """Agrega un nuevo tamizaje (antecedente médico o signo vital)."""
         if all([tamizaje_paciente.value, tamizaje_tipo.value, tamizaje_descripcion.value, tamizaje_fecha.value, tamizaje_presion_arterial.value, tamizaje_frecuencia_cardiaca.value, tamizaje_frecuencia_respiratoria.value, tamizaje_temperatura.value, tamizaje_peso.value, tamizaje_talla.value]):
             try:
-                # Verificar si el paciente tiene una historia clínica
-                paciente_id = tamizaje_paciente.value
-                if not paciente_tiene_historia(paciente_id):  # Usar la función de verificación
-                    show_alert("Este paciente no tiene una historia clínica. Registre una historia clínica primero.")  # Mostrar alerta
-                    return  # Salir de la función si el paciente no tiene una historia clínica
-
                 # Verificar si el paciente ya tiene un tamizaje
-                if paciente_tiene_tamizaje(paciente_id, all_tamizajes):  # Usar la función de validación del formulario
+                paciente_id = tamizaje_paciente.value
+                if paciente_tiene_tamizaje(paciente_id, all_tamizajes):  # Usar la función de tamizaje_crud
                     show_alert("Este paciente ya tiene un tamizaje.")  # Mostrar alerta
                     return  # Salir de la función si el paciente ya tiene un tamizaje
 
-                # Agregar antecedente médico
-                add_antecedente_medico(
-                    paciente_id, tamizaje_tipo.value, tamizaje_descripcion.value
+                # Agregar tamizaje usando la función de tamizaje_crud
+                agregar_tamizaje(
+                    paciente_id,
+                    tamizaje_tipo.value,
+                    tamizaje_descripcion.value,
+                    tamizaje_fecha.value,
+                    tamizaje_presion_arterial.value,
+                    tamizaje_frecuencia_cardiaca.value,
+                    tamizaje_frecuencia_respiratoria.value,
+                    tamizaje_temperatura.value,
+                    tamizaje_peso.value,
+                    tamizaje_talla.value
                 )
-                # Agregar signo vital
-                add_signo_vital(
-                    paciente_id, tamizaje_fecha.value, tamizaje_presion_arterial.value, tamizaje_frecuencia_cardiaca.value, tamizaje_frecuencia_respiratoria.value, tamizaje_temperatura.value, tamizaje_peso.value, tamizaje_talla.value
-                )
+
                 clear_fields()
                 refresh_tamizajes()
                 # Colapsar el panel del formulario
@@ -247,13 +165,6 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                 page.update()
             except ValueError as e:
                 show_alert(f"Error al agregar tamizaje: {str(e)}")  # Mostrar alerta de error
-
-    def paciente_tiene_tamizaje(paciente_id, all_tamizajes):
-        """Verifica si un paciente ya tiene un tamizaje."""
-        for tamizaje in all_tamizajes:
-            if tamizaje["paciente"].id_paciente == paciente_id:
-                return True
-        return False
 
     def open_edit_dialog(tamizaje):
         """Abre el diálogo de edición para un tamizaje."""
@@ -290,14 +201,18 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
     def save_edit(e):
         """Guarda los cambios realizados en el tamizaje."""
         nonlocal selected_tamizaje
-        if hasattr(selected_tamizaje, "tipo"):  # Si es un antecedente médico
-            update_antecedente_medico(
-                edit_id.value, edit_tipo.value, edit_descripcion.value
-            )
-        else:  # Si es un signo vital
-            update_signo_vital(
-                edit_id.value, edit_fecha.value, edit_presion_arterial.value, edit_frecuencia_cardiaca.value, edit_frecuencia_respiratoria.value, edit_temperatura.value, edit_peso.value, edit_talla.value
-            )
+        actualizar_tamizaje(
+            selected_tamizaje,
+            tipo=edit_tipo.value if hasattr(selected_tamizaje, "tipo") else None,
+            descripcion=edit_descripcion.value if hasattr(selected_tamizaje, "tipo") else None,
+            fecha=edit_fecha.value if not hasattr(selected_tamizaje, "tipo") else None,
+            presion_arterial=edit_presion_arterial.value if not hasattr(selected_tamizaje, "tipo") else None,
+            frecuencia_cardiaca=edit_frecuencia_cardiaca.value if not hasattr(selected_tamizaje, "tipo") else None,
+            frecuencia_respiratoria=edit_frecuencia_respiratoria.value if not hasattr(selected_tamizaje, "tipo") else None,
+            temperatura=edit_temperatura.value if not hasattr(selected_tamizaje, "tipo") else None,
+            peso=edit_peso.value if not hasattr(selected_tamizaje, "tipo") else None,
+            talla=edit_talla.value if not hasattr(selected_tamizaje, "tipo") else None,
+        )
         edit_dialog.open = False
         refresh_tamizajes()
 
@@ -368,6 +283,7 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
             show_alert("Este paciente ya tiene un tamizaje.")  # Mostrar alerta
             return  # Salir de la función si el paciente ya tiene un tamizaje
 
+        # Si el paciente tiene una historia clínica y no tiene un tamizaje, seleccionarlo
         tamizaje_paciente.value = paciente.id_paciente
         paciente_search_field.value = f"{paciente.nombre} {paciente.apellido}"
         paciente_results.controls = []
@@ -391,7 +307,7 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
         """Agrega un nuevo signo vital."""
         if all([field.value for field in add_signo_dialog.content.controls]):
             try:
-                add_signo_vital(
+                agregar_signo_vital(  # Usar la nueva función
                     selected_tamizaje.id_paciente,
                     add_signo_dialog.content.controls[0].value,  # Fecha
                     add_signo_dialog.content.controls[1].value,  # Presión arterial
@@ -431,7 +347,6 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
     paciente_search_field = formulario["paciente_search_field"]
     paciente_results = formulario["paciente_results"]
     agregar_button = formulario["agregar_button"]
-    paciente_tiene_tamizaje = formulario["paciente_tiene_tamizaje"]  # Obtener la función de validación
 
     # Crear el ExpansionPanel para el formulario
     form_panel = ft.ExpansionPanel(
@@ -449,59 +364,35 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
         on_change=lambda e: page.update(),
     )
 
-    # Campo de búsqueda de tamizajes
-    search_field = ft.TextField(
-        label="Buscar por nombre o apellido del paciente",
-        on_change=on_search,
-        expand=True,
-        suffix=ft.IconButton(ft.icons.SEARCH, on_click=on_search)
+    # Crear la interfaz de usuario
+    ui = crear_tamizaje_ui(
+        page,
+        confirm_delete,
+        add_signo_vital_clicked,
+        save_edit,
+        on_search,
+        change_page,
     )
 
-    # Lista de tamizajes
-    tamizajes_list = ft.Column(scroll=ft.ScrollMode.AUTO, expand=True)
-
-    # Diálogo de edición
-    edit_id = ft.TextField(label="ID Tamizaje", disabled=True)
-    edit_tipo = ft.TextField(label="Tipo de antecedente médico")
-    edit_descripcion = ft.TextField(label="Descripción del antecedente médico")
-    edit_fecha = ft.TextField(label="Fecha del signo vital")
-    edit_presion_arterial = ft.TextField(label="Presión arterial")
-    edit_frecuencia_cardiaca = ft.TextField(label="Frecuencia cardíaca")
-    edit_frecuencia_respiratoria = ft.TextField(label="Frecuencia respiratoria")
-    edit_temperatura = ft.TextField(label="Temperatura")
-    edit_peso = ft.TextField(label="Peso")
-    edit_talla = ft.TextField(label="Talla")
-    edit_dialog = ft.AlertDialog(
-        title=ft.Text("Editar Tamizaje"),
-        content=ft.Column(
-            [
-                edit_tipo,
-                edit_descripcion,
-                edit_fecha,
-                edit_presion_arterial,
-                edit_frecuencia_cardiaca,
-                edit_frecuencia_respiratoria,
-                edit_temperatura,
-                edit_peso,
-                edit_talla,
-            ],
-            spacing=10
-        ),
-        actions=[
-            ft.TextButton("Guardar", on_click=save_edit),
-            ft.TextButton("Cancelar", on_click=lambda e: setattr(edit_dialog, "open", False) or page.update())
-        ],
-    )
-
-    # Controles de paginación
-    pagination_controls = ft.Row(
-        [
-            ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda e: change_page(-1)),
-            page_number_text,
-            ft.IconButton(ft.icons.ARROW_FORWARD, on_click=lambda e: change_page(1)),
-        ],
-        alignment=ft.MainAxisAlignment.CENTER
-    )
+    # Acceder a los componentes de la UI
+    page_number_text = ui["page_number_text"]
+    confirm_delete_dialog = ui["confirm_delete_dialog"]
+    add_signo_dialog = ui["add_signo_dialog"]
+    alert_dialog = ui["alert_dialog"]
+    search_field = ui["search_field"]
+    tamizajes_list = ui["tamizajes_list"]
+    edit_id = ui["edit_id"]
+    edit_tipo = ui["edit_tipo"]
+    edit_descripcion = ui["edit_descripcion"]
+    edit_fecha = ui["edit_fecha"]
+    edit_presion_arterial = ui["edit_presion_arterial"]
+    edit_frecuencia_cardiaca = ui["edit_frecuencia_cardiaca"]
+    edit_frecuencia_respiratoria = ui["edit_frecuencia_respiratoria"]
+    edit_temperatura = ui["edit_temperatura"]
+    edit_peso = ui["edit_peso"]
+    edit_talla = ui["edit_talla"]
+    edit_dialog = ui["edit_dialog"]
+    pagination_controls = ui["pagination_controls"]
 
     refresh_tamizajes()
 

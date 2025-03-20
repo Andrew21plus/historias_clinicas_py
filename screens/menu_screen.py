@@ -1,7 +1,7 @@
 import flet as ft
 from screens.pacientes_screen import PacientesScreen
-from screens.historia_clinica_screen import HistoriaClinicaScreen
-from screens.tamizaje_screen  import TamizajeScreen
+from screens.historia_clinica.historia_clinica_screen import HistoriaClinicaScreen
+from screens.tamizaje.tamizaje_screen  import TamizajeScreen
 
 def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to_login):
     """Pantalla del menú principal con opciones de navegación y cierre de sesión"""
