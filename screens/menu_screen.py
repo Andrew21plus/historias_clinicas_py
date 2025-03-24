@@ -1,5 +1,5 @@
 import flet as ft
-from screens.pacientes_screen import PacientesScreen
+from screens.pacientes.pacientes_screen import PacientesScreen
 from screens.historia_clinica.historia_clinica_screen import HistoriaClinicaScreen
 from screens.tamizaje.tamizaje_screen  import TamizajeScreen
 

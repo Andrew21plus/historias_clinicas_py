@@ -1,12 +1,5 @@
 import flet as ft
 
-def paciente_tiene_historia(paciente_id, all_historias):
-    """Verifica si un paciente ya tiene una historia clínica."""
-    for historia in all_historias:
-        if historia.id_paciente == paciente_id:  # Acceder directamente a id_paciente
-            return True
-    return False
-
 def crear_formulario_historia_clinica(page, add_historia_clicked, on_paciente_search, select_paciente, all_historias):
     # Campos del formulario
     historia_paciente = ft.TextField(label="ID Paciente", width=200, read_only=True)
@@ -45,6 +38,5 @@ def crear_formulario_historia_clinica(page, add_historia_clicked, on_paciente_se
         "historia_enfermedad": historia_enfermedad,
         "paciente_search_field": paciente_search_field,
         "paciente_results": paciente_results,
-        "agregar_button": agregar_button,
-        "paciente_tiene_historia": paciente_tiene_historia  # Devolver la función de validación
+        "agregar_button": agregar_button
     }
