@@ -4,11 +4,12 @@ from .paciente_crud import (
     obtener_pacientes,
     agregar_paciente,
     actualizar_paciente,
-    eliminar_paciente
+    eliminar_paciente,
 )
 from .paciente_ui import crear_paciente_ui
 from utils.formulario_paciente import crear_formulario_paciente
 from ..historia_clinica.historia_clinica_crud import agregar_historia_clinica
+
 
 def PacientesScreen(page: ft.Page, id_usuario: int):
     selected_photo = None  # Variable para almacenar la imagen seleccionada
@@ -17,14 +18,16 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
     pacientes_per_page = 5  # Número de pacientes por página
     search_query = ""  # Variable para almacenar la consulta de búsqueda
     all_pacientes = []  # Lista para almacenar todos los pacientes
-    selected_paciente_id = None  # Variable para almacar el ID del paciente seleccionado para eliminar
+    selected_paciente_id = (
+        None  # Variable para almacar el ID del paciente seleccionado para eliminar
+    )
 
     def show_alert(message):
         """Muestra un diálogo de alerta con el mensaje proporcionado."""
         alert_dialog.content = ft.Text(message)
         alert_dialog.open = True
         page.update()
-    
+
     def validar_campos_requeridos(campos):
         campos_faltantes = [campo for campo in campos if not campo.value]
         if campos_faltantes:
@@ -84,11 +87,15 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
                                                 [
                                                     ft.IconButton(
                                                         ft.icons.EDIT,
-                                                        on_click=lambda e, p=paciente: open_edit_dialog(p),
+                                                        on_click=lambda e, p=paciente: open_edit_dialog(
+                                                            p
+                                                        ),
                                                     ),
                                                     ft.IconButton(
                                                         ft.icons.DELETE,
-                                                        on_click=lambda e, id_paciente=paciente.id_paciente: confirm_delete_dialog_handler(id_paciente),
+                                                        on_click=lambda e, id_paciente=paciente.id_paciente: confirm_delete_dialog_handler(
+                                                            id_paciente
+                                                        ),
                                                     ),
                                                 ]
                                             ),
@@ -98,7 +105,10 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
                                     ft.Text(f"ID: {paciente.id_paciente}"),
                                     ft.Text(f"Sexo: {paciente.sexo}"),
                                     ft.Text(f"Fecha Nac: {paciente.fecha_nacimiento}"),
-                                    ft.Text(f"Historia Clínica: {paciente.num_historia_clinica}", italic=True),
+                                    ft.Text(
+                                        f"Historia Clínica: {paciente.num_historia_clinica}",
+                                        italic=True,
+                                    ),
                                 ],
                                 spacing=5,
                                 expand=True,
@@ -122,7 +132,9 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
 
     def mostrar_dialogo_historia_clinica(id_paciente, nombre_completo):
         """Muestra el diálogo para agregar historia clínica"""
-        historia_dialog.title = ft.Text(f"Agregar Historia Clínica para {nombre_completo}")
+        historia_dialog.title = ft.Text(
+            f"Agregar Historia Clínica para {nombre_completo}"
+        )
         historia_paciente_id.value = id_paciente
         historia_motivo.value = ""
         historia_enfermedad.value = ""
@@ -133,17 +145,19 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
         """Guarda la historia clínica del paciente"""
         if not all([historia_motivo.value, historia_enfermedad.value]):
             alert_dialog.title = ft.Text("Error")
-            alert_dialog.content = ft.Text("Por favor complete todos los campos de la historia clínica")
+            alert_dialog.content = ft.Text(
+                "Por favor complete todos los campos de la historia clínica"
+            )
             alert_dialog.open = True
             page.update()
             return
-        
+
         try:
             agregar_historia_clinica(
                 historia_paciente_id.value,
                 historia_motivo.value,
                 historia_enfermedad.value,
-                id_usuario
+                id_usuario,
             )
             historia_dialog.open = False
             success_dialog.title = ft.Text("Éxito")
@@ -152,7 +166,9 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
             page.update()
         except Exception as ex:
             alert_dialog.title = ft.Text("Error")
-            alert_dialog.content = ft.Text(f"Error al agregar historia clínica: {str(ex)}")
+            alert_dialog.content = ft.Text(
+                f"Error al agregar historia clínica: {str(ex)}"
+            )
             alert_dialog.open = True
             page.update()
 
@@ -201,15 +217,15 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
                     encoded_photo,
                     id_usuario,
                 )
-                
+
                 # Mostrar diálogo para agregar historia clínica
                 nombre_completo = f"{nombre_mayusculas} {apellido_mayusculas}"
                 mostrar_dialogo_historia_clinica(paciente_id.value, nombre_completo)
-                
+
                 clear_fields()  # Limpiar los campos después de agregar
                 form_panel.expanded = False  # Colapsar el panel del formulario
                 refresh_pacientes()
-                
+
             except Exception as ex:
                 show_alert(f"Error al agregar paciente: {str(ex)}")
 
@@ -285,12 +301,6 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
         default_photo_icon.visible = True  # Muestra el icono por defecto
         page.update()  # Forzar la actualización de la interfaz
 
-    def close_edit_dialog(e):
-        """Cierra el diálogo de edición."""
-        edit_dialog.open = False
-        edit_sexo.value = None  # Restablecer el valor del Dropdown a None
-        page.update()  # Forzar la actualización de la interfaz
-
     def on_file_picked(e: ft.FilePickerResultEvent):
         """Maneja la selección de una foto al agregar un paciente."""
         nonlocal selected_photo
@@ -328,7 +338,9 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
         nonlocal search_query, current_page
         search_query = search_field.value
         current_page = 0  # Reiniciar la página a 0 al realizar una nueva búsqueda
-        page_number_text.value = f"Página {current_page + 1}"  # Actualizar el texto del número de página
+        page_number_text.value = (
+            f"Página {current_page + 1}"  # Actualizar el texto del número de página
+        )
         refresh_pacientes()
 
     # Crear el formulario desde utils
@@ -353,7 +365,7 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
         on_search,
         change_page,
         on_edit_file_picked,
-        guardar_historia_clinica
+        guardar_historia_clinica,
     )
 
     # Acceder a los componentes de la UI
@@ -383,7 +395,8 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
     form_panel = ft.ExpansionPanel(
         header=ft.ListTile(
             title=ft.Text("Agregar Nuevo Paciente"),
-            on_click=lambda e: setattr(form_panel, "expanded", not form_panel.expanded) or page.update(),
+            on_click=lambda e: setattr(form_panel, "expanded", not form_panel.expanded)
+            or page.update(),
         ),
         content=ft.Column([form_expansion]),  # Contenido del formulario
         expanded=False,  # Inicialmente colapsado
