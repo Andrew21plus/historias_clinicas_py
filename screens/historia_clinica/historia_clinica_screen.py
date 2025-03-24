@@ -10,6 +10,7 @@ from .historia_clinica_ui import crear_historia_clinica_ui
 from utils.formulario_historia_clinica import crear_formulario_historia_clinica
 from services.paciente_service import get_paciente, get_pacientes_by_id_usuario
 
+
 def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
     selected_historia = None  # Variable para almacenar la historia clínica seleccionada
     current_page = 0  # Página actual de la paginación
@@ -29,7 +30,7 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
         confirm_delete_dialog.open = False
         page.update()
         if confirmed:
-            remove_historia(selected_historia.id_historia)  # Eliminar la historia clínica
+            remove_historia(selected_historia.id_historia)  # type: ignore # Eliminar la historia clínica
         selected_historia = None  # Reiniciar la historia seleccionada
 
     def remove_historia(id_historia):
@@ -66,28 +67,44 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                         [
                             ft.Row(
                                 [
-                                    ft.Text(f"Paciente: {paciente_nombre} {paciente_apellido}", weight=ft.FontWeight.BOLD,
-                                            expand=True),
-                                    ft.Row([
-                                        ft.IconButton(ft.icons.EDIT, on_click=lambda e, h=historia: open_edit_dialog(h)),
-                                        ft.IconButton(ft.icons.DELETE,
-                                                      on_click=lambda e, h=historia: confirm_delete_dialog_handler(h))
-                                    ])
+                                    ft.Text(
+                                        f"Paciente: {paciente_nombre} {paciente_apellido}",
+                                        weight=ft.FontWeight.BOLD,
+                                        expand=True,
+                                    ),
+                                    ft.Row(
+                                        [
+                                            ft.IconButton(
+                                                ft.icons.EDIT,
+                                                on_click=lambda e, h=historia: open_edit_dialog(
+                                                    h
+                                                ),
+                                            ),
+                                            ft.IconButton(
+                                                ft.icons.DELETE,
+                                                on_click=lambda e, h=historia: confirm_delete_dialog_handler(
+                                                    h
+                                                ),
+                                            ),
+                                        ]
+                                    ),
                                 ],
-                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                             ),
                             ft.Text(f"Sexo: {paciente_sexo}"),
-                            ft.Text(f"Fecha de nacimiento: {paciente_fecha_nacimiento}"),
+                            ft.Text(
+                                f"Fecha de nacimiento: {paciente_fecha_nacimiento}"
+                            ),
                             ft.Text(f"Historia clínica: {paciente_historia_clinica}"),
                             ft.Text(f"Motivo de consulta: {historia.motivo_consulta}"),
                             ft.Text(f"Enfermedad actual: {historia.enfermedad_actual}"),
                         ],
                         spacing=5,
-                        expand=True
+                        expand=True,
                     ),
-                    padding=10
+                    padding=10,
                 ),
-                width=page.window_width * 0.95
+                width=page.window_width * 0.95,  # type: ignore
             )
             historias_list.controls.append(historia_card)
         page.update()
@@ -101,10 +118,15 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
 
     def add_historia_clicked(e):
         """Agrega una nueva historia clínica."""
-        if all([historia_paciente.value, historia_motivo.value, historia_enfermedad.value]):
+        if all(
+            [historia_paciente.value, historia_motivo.value, historia_enfermedad.value]
+        ):
             try:
                 agregar_historia_clinica(
-                    historia_paciente.value, historia_motivo.value, historia_enfermedad.value, id_usuario
+                    historia_paciente.value,
+                    historia_motivo.value,
+                    historia_enfermedad.value,
+                    id_usuario,
                 )
                 clear_fields()
                 refresh_historias()
@@ -166,15 +188,17 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
         search_text = paciente_search_field.value.lower()
         if search_text:
             resultados = [
-                p for p in get_pacientes_by_id_usuario(id_usuario)
+                p
+                for p in get_pacientes_by_id_usuario(id_usuario)
                 if search_text in p.nombre.lower() or search_text in p.apellido.lower()
             ]
             paciente_results.controls = [
                 ft.ListTile(
                     title=ft.Text(f"{p.nombre} {p.apellido}"),
                     subtitle=ft.Text(f"ID: {p.id_paciente}"),
-                    on_click=lambda e, p=p: select_paciente(p)
-                ) for p in resultados
+                    on_click=lambda e, p=p: select_paciente(p),
+                )
+                for p in resultados
             ]
         else:
             paciente_results.controls = []
@@ -195,11 +219,7 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
 
     # Crear el formulario de historia clínica
     formulario = crear_formulario_historia_clinica(
-        page,
-        add_historia_clicked,
-        on_paciente_search,
-        select_paciente,
-        all_historias
+        page, add_historia_clicked, on_paciente_search, select_paciente, all_historias
     )
 
     # Acceder a los componentes del formulario
@@ -215,7 +235,8 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
     form_panel = ft.ExpansionPanel(
         header=ft.ListTile(
             title=ft.Text("Agregar Nueva Historia Clínica"),
-            on_click=lambda e: setattr(form_panel, "expanded", not form_panel.expanded) or page.update(),
+            on_click=lambda e: setattr(form_panel, "expanded", not form_panel.expanded)
+            or page.update(),
         ),
         content=ft.Container(content=form_content),
         expanded=False,
@@ -229,11 +250,7 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
 
     # Crear la interfaz de usuario
     ui = crear_historia_clinica_ui(
-        page,
-        confirm_delete,
-        save_edit,
-        on_search,
-        change_page
+        page, confirm_delete, save_edit, on_search, change_page
     )
 
     # Acceder a los componentes de la UI
@@ -253,7 +270,9 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
 
     return ft.Column(
         [
-            ft.Text("Gestión de Historias Clínicas", size=24, weight=ft.FontWeight.BOLD),
+            ft.Text(
+                "Gestión de Historias Clínicas", size=24, weight=ft.FontWeight.BOLD
+            ),
             expansion_panel_list,
             ft.Divider(height=20, color=ft.colors.TRANSPARENT),
             ft.Row([search_field], alignment=ft.MainAxisAlignment.CENTER),
@@ -262,13 +281,13 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                 content=historias_list,
                 expand=True,
                 padding=10,
-                alignment=ft.alignment.top_center
+                alignment=ft.alignment.top_center,
             ),
             pagination_controls,
             edit_dialog,
             confirm_delete_dialog,
-            alert_dialog
+            alert_dialog,
         ],
         expand=True,
-        scroll=ft.ScrollMode.AUTO
+        scroll=ft.ScrollMode.AUTO,
     )
