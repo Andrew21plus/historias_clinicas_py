@@ -1,3 +1,4 @@
+import unicodedata
 import flet as ft
 from .historia_clinica_crud import (
     obtener_historias_clinicas,
@@ -80,12 +81,12 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                                                     h
                                                 ),
                                             ),
-                                            ft.IconButton(
-                                                ft.icons.DELETE,
-                                                on_click=lambda e, h=historia: confirm_delete_dialog_handler(
-                                                    h
-                                                ),
-                                            ),
+                                            # ft.IconButton(
+                                            #     ft.icons.DELETE,
+                                            #     on_click=lambda e, h=historia: confirm_delete_dialog_handler(
+                                            #         h
+                                            #     ),
+                                            # ),
                                         ]
                                     ),
                                 ],
@@ -109,12 +110,12 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
             historias_list.controls.append(historia_card)
         page.update()
 
-    def confirm_delete_dialog_handler(historia):
-        """Abre el diálogo de confirmación para eliminar."""
-        nonlocal selected_historia
-        selected_historia = historia  # Guardar la historia clínica seleccionada
-        confirm_delete_dialog.open = True
-        page.update()
+    # def confirm_delete_dialog_handler(historia):
+    #     """Abre el diálogo de confirmación para eliminar."""
+    #     nonlocal selected_historia
+    #     selected_historia = historia  # Guardar la historia clínica seleccionada
+    #     confirm_delete_dialog.open = True
+    #     page.update()
 
     def add_historia_clicked(e):
         """Agrega una nueva historia clínica."""
@@ -184,14 +185,31 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
         refresh_historias()
 
     def on_paciente_search(e):
-        """Busca pacientes por nombre o apellido."""
-        search_text = paciente_search_field.value.lower()
+        """Busca pacientes por nombre o apellido, manejando caracteres especiales y acentos."""
+
+        def normalize_string(s):
+            """Normaliza un string removiendo acentos y caracteres especiales."""
+            if not s:
+                return ""
+            return (
+                unicodedata.normalize("NFKD", str(s))
+                .encode("ASCII", "ignore")
+                .decode("ASCII")
+                .lower()
+            )
+
+        search_text = paciente_search_field.value
         if search_text:
+            # Normalizamos el texto de búsqueda
+            normalized_search = normalize_string(search_text)
+
             resultados = [
                 p
                 for p in get_pacientes_by_id_usuario(id_usuario)
-                if search_text in p.nombre.lower() or search_text in p.apellido.lower()
+                if (normalized_search in normalize_string(p.nombre))
+                or (normalized_search in normalize_string(p.apellido))
             ]
+
             paciente_results.controls = [
                 ft.ListTile(
                     title=ft.Text(f"{p.nombre} {p.apellido}"),
@@ -202,6 +220,7 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
             ]
         else:
             paciente_results.controls = []
+
         page.update()
 
     def select_paciente(paciente):

@@ -1,6 +1,9 @@
 import flet as ft
 
-def crear_tamizaje_ui(page, confirm_delete, add_signo_vital_clicked, save_edit, on_search, change_page):
+
+def crear_tamizaje_ui(
+    page, confirm_delete, add_signo_vital_clicked, save_edit, on_search, change_page
+):
     """Crea la interfaz de usuario para la gestión de tamizajes."""
     # Texto dinámico para mostrar el número de página
     page_number_text = ft.Text(f"Página 1")
@@ -8,7 +11,9 @@ def crear_tamizaje_ui(page, confirm_delete, add_signo_vital_clicked, save_edit, 
     # Diálogo de confirmación para eliminar
     confirm_delete_dialog = ft.AlertDialog(
         title=ft.Text("Confirmar eliminación"),
-        content=ft.Text("¿Estás seguro de que deseas eliminar todos los antecedentes y signos vitales de este paciente?"),
+        content=ft.Text(
+            "¿Estás seguro de que deseas eliminar todos los antecedentes y signos vitales de este paciente?"
+        ),
         actions=[
             ft.TextButton("Sí", on_click=lambda e: confirm_delete(True)),
             ft.TextButton("No", on_click=lambda e: confirm_delete(False)),
@@ -28,11 +33,15 @@ def crear_tamizaje_ui(page, confirm_delete, add_signo_vital_clicked, save_edit, 
                 ft.TextField(label="Peso", expand=True),
                 ft.TextField(label="Talla", expand=True),
             ],
-            spacing=10
+            spacing=10,
         ),
         actions=[
             ft.TextButton("Agregar", on_click=lambda e: add_signo_vital_clicked(e)),
-            ft.TextButton("Cancelar", on_click=lambda e: setattr(add_signo_dialog, "open", False) or page.update())
+            ft.TextButton(
+                "Cancelar",
+                on_click=lambda e: setattr(add_signo_dialog, "open", False)
+                or page.update(),
+            ),
         ],
     )
 
@@ -43,7 +52,8 @@ def crear_tamizaje_ui(page, confirm_delete, add_signo_vital_clicked, save_edit, 
         actions=[
             ft.TextButton(
                 "OK",
-                on_click=lambda e: setattr(alert_dialog, "open", False) or page.update(),
+                on_click=lambda e: setattr(alert_dialog, "open", False)
+                or page.update(),
             )
         ],
     )
@@ -53,7 +63,7 @@ def crear_tamizaje_ui(page, confirm_delete, add_signo_vital_clicked, save_edit, 
         label="Buscar por nombre o apellido del paciente",
         on_change=on_search,
         expand=True,
-        suffix=ft.IconButton(ft.icons.SEARCH, on_click=on_search)
+        suffix=ft.IconButton(ft.icons.SEARCH, on_click=on_search),
     )
 
     # Lista de tamizajes
@@ -61,7 +71,13 @@ def crear_tamizaje_ui(page, confirm_delete, add_signo_vital_clicked, save_edit, 
 
     # Diálogo de edición
     edit_id = ft.TextField(label="ID Tamizaje", disabled=True)
-    edit_tipo = ft.TextField(label="Tipo de antecedente médico")
+    edit_tipo = ft.Dropdown(
+        label="Tipo de antecedente médico",
+        options=[
+            ft.dropdown.Option("Personal"),
+            ft.dropdown.Option("Familiar"),
+        ],
+    )
     edit_descripcion = ft.TextField(label="Descripción del antecedente médico")
     edit_fecha = ft.TextField(label="Fecha del signo vital")
     edit_presion_arterial = ft.TextField(label="Presión arterial")
@@ -84,11 +100,14 @@ def crear_tamizaje_ui(page, confirm_delete, add_signo_vital_clicked, save_edit, 
                 edit_peso,
                 edit_talla,
             ],
-            spacing=10
+            spacing=10,
         ),
         actions=[
             ft.TextButton("Guardar", on_click=save_edit),
-            ft.TextButton("Cancelar", on_click=lambda e: setattr(edit_dialog, "open", False) or page.update())
+            ft.TextButton(
+                "Cancelar",
+                on_click=lambda e: setattr(edit_dialog, "open", False) or page.update(),
+            ),
         ],
     )
 
@@ -99,7 +118,7 @@ def crear_tamizaje_ui(page, confirm_delete, add_signo_vital_clicked, save_edit, 
             page_number_text,
             ft.IconButton(ft.icons.ARROW_FORWARD, on_click=lambda e: change_page(1)),
         ],
-        alignment=ft.MainAxisAlignment.CENTER
+        alignment=ft.MainAxisAlignment.CENTER,
     )
 
     return {
