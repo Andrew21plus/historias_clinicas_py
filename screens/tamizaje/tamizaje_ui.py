@@ -1,49 +1,50 @@
 import flet as ft
 
 
-def crear_tamizaje_ui(
-    page, confirm_delete, add_signo_vital_clicked, save_edit, on_search, change_page
-):
+def crear_tamizaje_ui(page, save_edit, on_search, change_page):
+    # def crear_tamizaje_ui(
+    #     page, confirm_delete, add_signo_vital_clicked, save_edit, on_search, change_page
+    # ):
     """Crea la interfaz de usuario para la gestión de tamizajes."""
     # Texto dinámico para mostrar el número de página
     page_number_text = ft.Text(f"Página 1")
 
     # Diálogo de confirmación para eliminar
-    confirm_delete_dialog = ft.AlertDialog(
-        title=ft.Text("Confirmar eliminación"),
-        content=ft.Text(
-            "¿Estás seguro de que deseas eliminar todos los antecedentes y signos vitales de este paciente?"
-        ),
-        actions=[
-            ft.TextButton("Sí", on_click=lambda e: confirm_delete(True)),
-            ft.TextButton("No", on_click=lambda e: confirm_delete(False)),
-        ],
-    )
+    # confirm_delete_dialog = ft.AlertDialog(
+    #     title=ft.Text("Confirmar eliminación"),
+    #     content=ft.Text(
+    #         "¿Estás seguro de que deseas eliminar todos los antecedentes y signos vitales de este paciente?"
+    #     ),
+    #     actions=[
+    #         ft.TextButton("Sí", on_click=lambda e: confirm_delete(True)),
+    #         ft.TextButton("No", on_click=lambda e: confirm_delete(False)),
+    #     ],
+    # )
 
     # Diálogo para agregar nuevos signos vitales
-    add_signo_dialog = ft.AlertDialog(
-        title=ft.Text("Agregar nuevo signo vital"),
-        content=ft.Column(
-            [
-                ft.TextField(label="Fecha", expand=True),
-                ft.TextField(label="Presión arterial", expand=True),
-                ft.TextField(label="Frecuencia cardíaca", expand=True),
-                ft.TextField(label="Frecuencia respiratoria", expand=True),
-                ft.TextField(label="Temperatura", expand=True),
-                ft.TextField(label="Peso", expand=True),
-                ft.TextField(label="Talla", expand=True),
-            ],
-            spacing=10,
-        ),
-        actions=[
-            ft.TextButton("Agregar", on_click=lambda e: add_signo_vital_clicked(e)),
-            ft.TextButton(
-                "Cancelar",
-                on_click=lambda e: setattr(add_signo_dialog, "open", False)
-                or page.update(),
-            ),
-        ],
-    )
+    # add_signo_dialog = ft.AlertDialog(
+    #     title=ft.Text("Agregar nuevo signo vital"),
+    #     content=ft.Column(
+    #         [
+    #             ft.TextField(label="Fecha", expand=True),
+    #             ft.TextField(label="Presión arterial", expand=True),
+    #             ft.TextField(label="Frecuencia cardíaca", expand=True),
+    #             ft.TextField(label="Frecuencia respiratoria", expand=True),
+    #             ft.TextField(label="Temperatura", expand=True),
+    #             ft.TextField(label="Peso", expand=True),
+    #             ft.TextField(label="Talla", expand=True),
+    #         ],
+    #         spacing=10,
+    #     ),
+    #     actions=[
+    #         ft.TextButton("Agregar", on_click=lambda e: add_signo_vital_clicked(e)),
+    #         ft.TextButton(
+    #             "Cancelar",
+    #             on_click=lambda e: setattr(add_signo_dialog, "open", False)
+    #             or page.update(),
+    #         ),
+    #     ],
+    # )
 
     # Diálogo de alerta para mostrar errores
     alert_dialog = ft.AlertDialog(
@@ -123,8 +124,8 @@ def crear_tamizaje_ui(
 
     return {
         "page_number_text": page_number_text,
-        "confirm_delete_dialog": confirm_delete_dialog,
-        "add_signo_dialog": add_signo_dialog,
+        # "confirm_delete_dialog": confirm_delete_dialog,
+        # "add_signo_dialog": add_signo_dialog,
         "alert_dialog": alert_dialog,
         "search_field": search_field,
         "tamizajes_list": tamizajes_list,

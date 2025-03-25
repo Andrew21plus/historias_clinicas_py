@@ -27,14 +27,14 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
         alert_dialog.open = True
         page.update()
 
-    def confirm_delete(confirmed):
-        """Maneja la confirmación de eliminación."""
-        nonlocal selected_tamizaje
-        confirm_delete_dialog.open = False
-        page.update()
-        if confirmed:
-            remove_tamizaje(selected_tamizaje)
-        selected_tamizaje = None  # Reiniciar el tamizaje seleccionado
+    # def confirm_delete(confirmed):
+    #     """Maneja la confirmación de eliminación."""
+    #     nonlocal selected_tamizaje
+    #     confirm_delete_dialog.open = False
+    #     page.update()
+    #     if confirmed:
+    #         remove_tamizaje(selected_tamizaje)
+    #     selected_tamizaje = None  # Reiniciar el tamizaje seleccionado
 
     def remove_tamizaje(paciente):
         """Elimina todos los antecedentes médicos y signos vitales asociados al paciente."""
@@ -120,10 +120,10 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                     title=ft.Row(
                         [
                             ft.Text("Signos Vitales", weight=ft.FontWeight.BOLD),
-                            ft.IconButton(
-                                ft.icons.ADD,
-                                on_click=lambda e, p=paciente: open_add_signo_dialog(p),
-                            ),
+                            # ft.IconButton(
+                            #     ft.icons.ADD,
+                            #     on_click=lambda e, p=paciente: open_add_signo_dialog(p),
+                            # ),
                         ],
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
@@ -132,11 +132,11 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                 contenido.controls.append(signos_expansion)
 
             # Botón de eliminar a nivel de paciente
-            eliminar_button = ft.IconButton(
-                ft.icons.DELETE,
-                on_click=lambda e, p=paciente: confirm_delete_dialog_handler(p),
-                tooltip="Eliminar todos los antecedentes y signos vitales del paciente",
-            )
+            # eliminar_button = ft.IconButton(
+            #     ft.icons.DELETE,
+            #     on_click=lambda e, p=paciente: confirm_delete_dialog_handler(p),
+            #     tooltip="Eliminar todos los antecedentes y signos vitales del paciente",
+            # )
 
             tamizaje_card = ft.ExpansionTile(
                 title=ft.Row(
@@ -145,7 +145,7 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                             f"Paciente: {paciente.nombre} {paciente.apellido}",
                             weight=ft.FontWeight.BOLD,
                         ),
-                        eliminar_button,  # Botón de eliminar a nivel de paciente
+                        # eliminar_button,  # Botón de eliminar a nivel de paciente
                     ],
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                 ),
@@ -155,12 +155,12 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
             tamizajes_list.controls.append(tamizaje_card)
         page.update()
 
-    def confirm_delete_dialog_handler(paciente):
-        """Abre el diálogo de confirmación para eliminar todos los antecedentes y signos vitales del paciente."""
-        nonlocal selected_tamizaje
-        selected_tamizaje = paciente  # Guardar el paciente seleccionado
-        confirm_delete_dialog.open = True
-        page.update()
+    # def confirm_delete_dialog_handler(paciente):
+    #     """Abre el diálogo de confirmación para eliminar todos los antecedentes y signos vitales del paciente."""
+    #     nonlocal selected_tamizaje
+    #     selected_tamizaje = paciente  # Guardar el paciente seleccionado
+    #     confirm_delete_dialog.open = True
+    #     page.update()
 
     def add_tamizaje_clicked(e):
         """Agrega un nuevo tamizaje (antecedente médico o signo vital)."""
@@ -381,49 +381,49 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
         paciente_results.controls = []
         page.update()
 
-    def open_add_signo_dialog(paciente):
-        """Abre el diálogo para agregar nuevos signos vitales."""
-        nonlocal selected_tamizaje
-        selected_tamizaje = paciente
-        add_signo_dialog.content.controls[0].value = ""  # Limpiar campo de fecha
-        add_signo_dialog.content.controls[1].value = (
-            ""  # Limpiar campo de presión arterial
-        )
-        add_signo_dialog.content.controls[2].value = (
-            ""  # Limpiar campo de frecuencia cardíaca
-        )
-        add_signo_dialog.content.controls[3].value = (
-            ""  # Limpiar campo de frecuencia respiratoria
-        )
-        add_signo_dialog.content.controls[4].value = ""  # Limpiar campo de temperatura
-        add_signo_dialog.content.controls[5].value = ""  # Limpiar campo de peso
-        add_signo_dialog.content.controls[6].value = ""  # Limpiar campo de talla
-        add_signo_dialog.open = True
-        page.update()
+    # def open_add_signo_dialog(paciente):
+    #     """Abre el diálogo para agregar nuevos signos vitales."""
+    #     nonlocal selected_tamizaje
+    #     selected_tamizaje = paciente
+    #     add_signo_dialog.content.controls[0].value = ""  # Limpiar campo de fecha
+    #     add_signo_dialog.content.controls[1].value = (
+    #         ""  # Limpiar campo de presión arterial
+    #     )
+    #     add_signo_dialog.content.controls[2].value = (
+    #         ""  # Limpiar campo de frecuencia cardíaca
+    #     )
+    #     add_signo_dialog.content.controls[3].value = (
+    #         ""  # Limpiar campo de frecuencia respiratoria
+    #     )
+    #     add_signo_dialog.content.controls[4].value = ""  # Limpiar campo de temperatura
+    #     add_signo_dialog.content.controls[5].value = ""  # Limpiar campo de peso
+    #     add_signo_dialog.content.controls[6].value = ""  # Limpiar campo de talla
+    #     add_signo_dialog.open = True
+    #     page.update()
 
-    def add_signo_vital_clicked(e):
-        """Agrega un nuevo signo vital."""
-        if all([field.value for field in add_signo_dialog.content.controls]):
-            try:
-                agregar_signo_vital(  # Usar la nueva función
-                    selected_tamizaje.id_paciente,  # type: ignore
-                    add_signo_dialog.content.controls[0].value,  # Fecha
-                    add_signo_dialog.content.controls[1].value,  # Presión arterial
-                    add_signo_dialog.content.controls[2].value,  # Frecuencia cardíaca
-                    add_signo_dialog.content.controls[
-                        3
-                    ].value,  # Frecuencia respiratoria
-                    add_signo_dialog.content.controls[4].value,  # Temperatura
-                    add_signo_dialog.content.controls[5].value,  # Peso
-                    add_signo_dialog.content.controls[6].value,  # Talla
-                )
-                add_signo_dialog.open = False
-                refresh_tamizajes()
-                page.update()
-            except ValueError as e:
-                show_alert(
-                    f"Error al agregar signo vital: {str(e)}"
-                )  # Mostrar alerta de error
+    # def add_signo_vital_clicked(e):
+    #     """Agrega un nuevo signo vital."""
+    #     if all([field.value for field in add_signo_dialog.content.controls]):
+    #         try:
+    #             agregar_signo_vital(  # Usar la nueva función
+    #                 selected_tamizaje.id_paciente,  # type: ignore
+    #                 add_signo_dialog.content.controls[0].value,  # Fecha
+    #                 add_signo_dialog.content.controls[1].value,  # Presión arterial
+    #                 add_signo_dialog.content.controls[2].value,  # Frecuencia cardíaca
+    #                 add_signo_dialog.content.controls[
+    #                     3
+    #                 ].value,  # Frecuencia respiratoria
+    #                 add_signo_dialog.content.controls[4].value,  # Temperatura
+    #                 add_signo_dialog.content.controls[5].value,  # Peso
+    #                 add_signo_dialog.content.controls[6].value,  # Talla
+    #             )
+    #             add_signo_dialog.open = False
+    #             refresh_tamizajes()
+    #             page.update()
+    #         except ValueError as e:
+    #             show_alert(
+    #                 f"Error al agregar signo vital: {str(e)}"
+    #             )  # Mostrar alerta de error
 
     # Crear el formulario de tamizaje
     formulario = crear_formulario_tamizaje(
@@ -471,8 +471,8 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
     # Crear la interfaz de usuario
     ui = crear_tamizaje_ui(
         page,
-        confirm_delete,
-        add_signo_vital_clicked,
+        # confirm_delete,
+        # add_signo_vital_clicked,
         save_edit,
         on_search,
         change_page,
@@ -480,8 +480,8 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
 
     # Acceder a los componentes de la UI
     page_number_text = ui["page_number_text"]
-    confirm_delete_dialog = ui["confirm_delete_dialog"]
-    add_signo_dialog = ui["add_signo_dialog"]
+    # confirm_delete_dialog = ui["confirm_delete_dialog"]
+    # add_signo_dialog = ui["add_signo_dialog"]
     alert_dialog = ui["alert_dialog"]
     search_field = ui["search_field"]
     tamizajes_list = ui["tamizajes_list"]
@@ -515,8 +515,8 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
             ),
             pagination_controls,
             edit_dialog,
-            confirm_delete_dialog,
-            add_signo_dialog,
+            # confirm_delete_dialog,
+            # add_signo_dialog,
             alert_dialog,  # Asegúrate de incluir el diálogo de alerta
         ],
         expand=True,
