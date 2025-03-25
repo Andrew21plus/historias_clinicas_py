@@ -5,6 +5,7 @@ from .paciente_crud import (
     agregar_paciente,
     actualizar_paciente,
     eliminar_paciente,
+    calcular_edad,
 )
 from .paciente_ui import crear_paciente_ui
 from utils.formulario_paciente import crear_formulario_paciente
@@ -56,71 +57,97 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
         # Paginación
         start_index = current_page * pacientes_per_page
         end_index = start_index + pacientes_per_page
+        
         for paciente in all_pacientes[start_index:end_index]:
-            photo_widget = ft.Icon(ft.icons.PERSON, size=100)  # Icono por defecto
+            # Widget de foto
+            photo_widget = ft.Icon(ft.icons.PERSON, size=100)  # Icono por defecto con color
             if paciente.foto:
                 photo_widget = ft.Image(
                     src_base64=base64.b64encode(paciente.foto).decode(),
                     width=100,
                     height=100,
+                    fit=ft.ImageFit.COVER,
+                    border_radius=ft.border_radius.all(5),
                 )
 
+            # Calcular edad
+            edad = calcular_edad(paciente.fecha_nacimiento)
+
+            # Crear card del paciente
             paciente_card = ft.Card(
                 content=ft.Container(
                     content=ft.Row(
                         [
+                            # Columna izquierda (foto)
                             ft.Container(
                                 content=photo_widget,
                                 padding=10,
                                 alignment=ft.alignment.center,
+                                width=120,
                             ),
+                            
+                            # Columna derecha (datos)
                             ft.Column(
                                 [
+                                    # Fila superior (nombre y botones)
                                     ft.Row(
                                         [
                                             ft.Text(
                                                 f"{paciente.nombre} {paciente.apellido}",
                                                 weight=ft.FontWeight.BOLD,
+                                                size=16,
                                                 expand=True,
                                             ),
                                             ft.Row(
                                                 [
                                                     ft.IconButton(
                                                         ft.icons.EDIT,
-                                                        on_click=lambda e, p=paciente: open_edit_dialog(
-                                                            p
-                                                        ),
+                                                        icon_color=ft.colors.BLUE,
+                                                        tooltip="Editar paciente",
+                                                        on_click=lambda e, p=paciente: open_edit_dialog(p),
                                                     ),
                                                     ft.IconButton(
                                                         ft.icons.DELETE,
-                                                        on_click=lambda e, id_paciente=paciente.id_paciente: confirm_delete_dialog_handler(
-                                                            id_paciente
-                                                        ),
+                                                        icon_color=ft.colors.RED,
+                                                        tooltip="Eliminar paciente",
+                                                        on_click=lambda e, id_paciente=paciente.id_paciente: confirm_delete_dialog_handler(id_paciente),
                                                     ),
-                                                ]
+                                                ],
+                                                spacing=5,
                                             ),
                                         ],
                                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                                     ),
-                                    ft.Text(f"ID: {paciente.id_paciente}"),
-                                    ft.Text(f"Sexo: {paciente.sexo}"),
-                                    ft.Text(f"Fecha Nac: {paciente.fecha_nacimiento}"),
-                                    ft.Text(
-                                        f"Historia Clínica: {paciente.num_historia_clinica}",
-                                        italic=True,
+                                    
+                                    # Datos del paciente
+                                    ft.Column(
+                                        [
+                                            ft.Text(f"📋 ID: {paciente.id_paciente}"),
+                                            ft.Text(f"👤 Sexo: {paciente.sexo}"),
+                                            ft.Text(f"🎂 Fecha Nac: {paciente.fecha_nacimiento}"),
+                                            ft.Text(f"🔢 Edad: {edad}"),
+                                            ft.Text(
+                                                f"🏥 Historia Clínica: {paciente.num_historia_clinica}",
+                                                italic=True,
+                                            ),
+                                        ],
+                                        spacing=3,
                                     ),
                                 ],
-                                spacing=5,
+                                spacing=8,
                                 expand=True,
                             ),
                         ],
                         spacing=10,
                     ),
-                    padding=10,
+                    padding=ft.padding.symmetric(vertical=10, horizontal=15),
                 ),
-                width=page.window_width * 0.95,  # type: ignore
+                elevation=3,
+                margin=ft.margin.symmetric(vertical=5),
+                width=page.window_width * 0.95,
             )
             pacientes_list.controls.append(paciente_card)
+        
         page.update()
 
     def confirm_delete_dialog_handler(id_paciente):
@@ -144,10 +171,23 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
     def guardar_historia_clinica(e):
         """Guarda la historia clínica del paciente"""
         if not all([historia_motivo.value, historia_enfermedad.value]):
-            alert_dialog.title = ft.Text("Error")
-            alert_dialog.content = ft.Text(
-                "Por favor complete todos los campos de la historia clínica"
+            # Configura el diálogo de alerta existente
+            alert_dialog.title = ft.Row(
+                controls=[
+                    ft.Icon(ft.icons.WARNING_AMBER, color=ft.colors.AMBER),
+                    ft.Text(" Campos incompletos", weight=ft.FontWeight.BOLD),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
             )
+            
+            alert_dialog.content = ft.Text(
+                "No se pudo crear la historia clínica porque faltan datos.\n\n"
+                "Por favor complete:\n"
+                f"- {'Motivo de consulta' if not historia_motivo.value else ''}\n"
+                f"- {'Enfermedad actual' if not historia_enfermedad.value else ''}\n\n"
+                "Puede completarlos desde el menú 'Historia clínica'."
+            )
+            
             alert_dialog.open = True
             page.update()
             return

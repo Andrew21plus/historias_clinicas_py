@@ -1,5 +1,5 @@
 import unicodedata
-
+from datetime import datetime
 from services.paciente_service import (
     get_pacientes_by_id_usuario,
     add_paciente,
@@ -63,9 +63,9 @@ def agregar_paciente(
     if not validar_fecha(fecha_nacimiento):
         raise ValueError("Formato de fecha inválido. Use dd-mm-yyyy.")
     if cedula_existe(id_paciente):
-        raise ValueError("Error: La cédula ya está registrada.")
+        raise ValueError("La cédula ya está registrada.")
     if historia_clinica_existe(num_historia_clinica):
-        raise ValueError("Error: El número de historia clínica ya está registrado.")
+        raise ValueError("El número de historia clínica ya está registrado.")
     return add_paciente(
         id_paciente,
         nombre,
@@ -96,9 +96,9 @@ def actualizar_paciente(
     if not validar_fecha(fecha_nacimiento):
         raise ValueError("Formato de fecha inválido. Use dd-mm-yyyy.")
     if cedula_existe(id_paciente, exclude_id=id_paciente):
-        raise ValueError("Error: La cédula ya está registrada.")
+        raise ValueError("La cédula ya está registrada.")
     if historia_clinica_existe(num_historia_clinica, exclude_id=id_paciente):
-        raise ValueError("Error: El número de historia clínica ya está registrado.")
+        raise ValueError("El número de historia clínica ya está registrado.")
     return update_paciente(
         id_paciente,
         nombre,
@@ -114,3 +114,21 @@ def actualizar_paciente(
 def eliminar_paciente(id_paciente):
     """Elimina un paciente."""
     return delete_paciente(id_paciente)
+
+def calcular_edad(fecha_nacimiento_str, formato_fecha="%d-%m-%Y"):
+    """Calcula la edad a partir de una fecha de nacimiento.
+    
+    Args:
+        fecha_nacimiento_str (str): Fecha en formato string
+        formato_fecha (str): Formato de la fecha (por defecto dd-mm-yyyy)
+    
+    Returns:
+        str: Edad en formato "X años" o "Fecha inválida" si hay error
+    """
+    try:
+        fecha_nac = datetime.strptime(fecha_nacimiento_str, formato_fecha)
+        hoy = datetime.now()
+        edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+        return f"{edad} años"
+    except (ValueError, TypeError):
+        return "Fecha inválida"

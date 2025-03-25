@@ -89,14 +89,22 @@ def crear_paciente_ui(page, confirm_delete, save_edit, on_search, change_page, o
 
     # Diálogo de alerta para mostrar errores
     alert_dialog = ft.AlertDialog(
-        title=ft.Text("Error"),
-        content=ft.Text(""),
+        modal=True,
+        title=ft.Row(
+            controls=[
+                ft.Icon(ft.icons.WARNING_AMBER, color=ft.colors.AMBER),
+                ft.Text(" Advertencia", weight=ft.FontWeight.BOLD),
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+        ),
+        content=ft.Text(""),  # Contenido dinámico
         actions=[
             ft.TextButton(
                 "OK",
                 on_click=lambda e: setattr(alert_dialog, "open", False) or page.update(),
             )
         ],
+        actions_alignment=ft.MainAxisAlignment.END,
     )
 
     # Diálogo de éxito para mostrar mensajes positivos
