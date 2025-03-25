@@ -42,12 +42,18 @@ def crear_formulario_tamizaje(
     tamizaje_descripcion = ft.TextField(
         label="Descripción del antecedente médico", expand=True
     )
+    
+    # Establecer fecha actual como valor por defecto
+    fecha_actual = datetime.now().strftime("%d-%m-%Y")
     tamizaje_fecha = ft.TextField(
         label="Fecha del signo vital (dd-mm-yyyy)",
         width=ancho_campo,
+        value=fecha_actual,  # Establecer valor por defecto
         hint_text="Ej: 15-05-1990",
-        on_change=lambda e: validar_fecha_campo(tamizaje_fecha),
+        read_only=True,
+        #on_change=lambda e: validar_fecha_campo(tamizaje_fecha),
     )
+    
     tamizaje_presion_arterial = ft.TextField(label="Presión arterial", expand=True)
     tamizaje_frecuencia_cardiaca = ft.TextField(
         label="Frecuencia cardíaca", expand=True
@@ -127,5 +133,5 @@ def crear_formulario_tamizaje(
         "paciente_search_field": paciente_search_field,
         "paciente_results": paciente_results,
         "agregar_button": agregar_button,
-        "paciente_tiene_tamizaje": paciente_tiene_tamizaje,  # Devolver la función de validación
+        "paciente_tiene_tamizaje": paciente_tiene_tamizaje,
     }

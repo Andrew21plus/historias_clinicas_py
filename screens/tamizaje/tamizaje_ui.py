@@ -88,7 +88,7 @@ def crear_tamizaje_ui(page, save_edit, on_search, change_page):
         ],
     )
     edit_descripcion = ft.TextField(label="Descripción del antecedente médico")
-    edit_fecha = ft.TextField(label="Fecha del signo vital")
+    edit_fecha = ft.TextField(label="Fecha del signo vital",read_only=True,)
     edit_presion_arterial = ft.TextField(label="Presión arterial")
     edit_frecuencia_cardiaca = ft.TextField(label="Frecuencia cardíaca")
     edit_frecuencia_respiratoria = ft.TextField(label="Frecuencia respiratoria")
