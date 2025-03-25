@@ -48,16 +48,24 @@ def crear_tamizaje_ui(page, save_edit, on_search, change_page):
 
     # Diálogo de alerta para mostrar errores
     alert_dialog = ft.AlertDialog(
-        title=ft.Text("Error"),
-        content=ft.Text(""),
+        modal=True,
+        title=ft.Row(
+            controls=[
+                ft.Icon(ft.icons.WARNING_AMBER, color=ft.colors.AMBER),
+                ft.Text(" Advertencia", weight=ft.FontWeight.BOLD),
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+        ),
+        content=ft.Text(""),  # Contenido dinámico
         actions=[
             ft.TextButton(
                 "OK",
-                on_click=lambda e: setattr(alert_dialog, "open", False)
-                or page.update(),
+                on_click=lambda e: setattr(alert_dialog, "open", False) or page.update(),
             )
         ],
+        actions_alignment=ft.MainAxisAlignment.END,
     )
+
 
     # Campo de búsqueda de tamizajes
     search_field = ft.TextField(

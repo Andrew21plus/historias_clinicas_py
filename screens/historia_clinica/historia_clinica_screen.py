@@ -103,12 +103,6 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                                                 tooltip="Editar historia",
                                                 on_click=lambda e, h=historia: open_edit_dialog(h),
                                             ),
-                                            # ft.IconButton(
-                                            #     ft.icons.DELETE,
-                                            #     icon_color=ft.colors.RED,
-                                            #     tooltip="Eliminar historia",
-                                            #     on_click=lambda e, h=historia: confirm_delete_dialog_handler(h),
-                                            # ),
                                         ],
                                         spacing=5,
                                     ),
@@ -117,13 +111,49 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                             ),
                             ft.Column(
                                 [
-                                    ft.Text(f" ⚥ Sexo: {paciente_sexo}"),
-                                    ft.Text(f"🎂 Fecha Nac: {paciente_fecha_nacimiento}"),
-                                    ft.Text(f"🔢 Edad: {edad_str}", color=ft.colors.BLUE_700),
-                                    ft.Text(f"🏥 HC: {paciente_historia_clinica}"),
+                                    ft.Row(
+                                        [
+                                            ft.Text(" ⚥  Sexo:", weight=ft.FontWeight.BOLD),
+                                            ft.Text(paciente_sexo),
+                                        ],
+                                        spacing=5,
+                                    ),
+                                    ft.Row(
+                                        [
+                                            ft.Text("🎂 Fecha Nac:", weight=ft.FontWeight.BOLD),
+                                            ft.Text(paciente_fecha_nacimiento),
+                                        ],
+                                        spacing=5,
+                                    ),
+                                    ft.Row(
+                                        [
+                                            ft.Text("🔢 Edad:", weight=ft.FontWeight.BOLD),
+                                            ft.Text(edad_str),
+                                        ],
+                                        spacing=5,
+                                    ),
+                                    ft.Row(
+                                        [
+                                            ft.Text("🏥 HC:", weight=ft.FontWeight.BOLD),
+                                            ft.Text(paciente_historia_clinica),
+                                        ],
+                                        spacing=5,
+                                    ),
                                     ft.Divider(height=10, color=ft.colors.GREY_300),
-                                    ft.Text(f"📋 Motivo: {historia.motivo_consulta}"),
-                                    ft.Text(f"🤒 Enfermedad: {historia.enfermedad_actual}"),
+                                    ft.Row(
+                                        [
+                                            ft.Text("📋 Motivo:", weight=ft.FontWeight.BOLD),
+                                            ft.Text(historia.motivo_consulta),
+                                        ],
+                                        spacing=5,
+                                    ),
+                                    ft.Row(
+                                        [
+                                            ft.Text("🤒 Enfermedad:", weight=ft.FontWeight.BOLD),
+                                            ft.Text(historia.enfermedad_actual),
+                                        ],
+                                        spacing=5,
+                                    ),
                                 ],
                                 spacing=3,
                             ),

@@ -49,7 +49,7 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
         selected_paciente_id = None  # Reiniciar el ID del paciente seleccionado
 
     def refresh_pacientes():
-        """Actualiza la lista de pacientes."""
+        """Actualiza la lista de pacientes con estilos consistentes."""
         nonlocal all_pacientes
         pacientes_list.controls.clear()
         all_pacientes = obtener_pacientes(id_usuario, search_query)
@@ -73,7 +73,7 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
             # Calcular edad
             edad = calcular_edad(paciente.fecha_nacimiento)
 
-            # Crear card del paciente
+            # Crear card del paciente con estilos consistentes
             paciente_card = ft.Card(
                 content=ft.Container(
                     content=ft.Row(
@@ -93,7 +93,7 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
                                     ft.Row(
                                         [
                                             ft.Text(
-                                                f"{paciente.nombre} {paciente.apellido}",
+                                                f"👤 {paciente.nombre} {paciente.apellido}",
                                                 weight=ft.FontWeight.BOLD,
                                                 size=16,
                                                 expand=True,
@@ -119,16 +119,43 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
                                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                                     ),
                                     
-                                    # Datos del paciente
+                                    # Datos del paciente con nuevo estilo
                                     ft.Column(
                                         [
-                                            ft.Text(f"📋 ID: {paciente.id_paciente}"),
-                                            ft.Text(f" ⚥ Sexo: {paciente.sexo}"),
-                                            ft.Text(f"🎂 Fecha Nac: {paciente.fecha_nacimiento}"),
-                                            ft.Text(f"🔢 Edad: {edad}"),
-                                            ft.Text(
-                                                f"🏥 Historia Clínica: {paciente.num_historia_clinica}",
-                                                italic=True,
+                                            ft.Row(
+                                                [
+                                                    ft.Text("📋 ID:", weight=ft.FontWeight.BOLD),
+                                                    ft.Text(paciente.id_paciente),
+                                                ],
+                                                spacing=5,
+                                            ),
+                                            ft.Row(
+                                                [
+                                                    ft.Text(" ⚥  Sexo:", weight=ft.FontWeight.BOLD),
+                                                    ft.Text(paciente.sexo),
+                                                ],
+                                                spacing=5,
+                                            ),
+                                            ft.Row(
+                                                [
+                                                    ft.Text("🎂 Fecha Nac:", weight=ft.FontWeight.BOLD),
+                                                    ft.Text(paciente.fecha_nacimiento),
+                                                ],
+                                                spacing=5,
+                                            ),
+                                            ft.Row(
+                                                [
+                                                    ft.Text("🔢 Edad:", weight=ft.FontWeight.BOLD),
+                                                    ft.Text(edad),
+                                                ],
+                                                spacing=5,
+                                            ),
+                                            ft.Row(
+                                                [
+                                                    ft.Text("🏥 HC:", weight=ft.FontWeight.BOLD),
+                                                    ft.Text(paciente.num_historia_clinica, italic=True),
+                                                ],
+                                                spacing=5,
                                             ),
                                         ],
                                         spacing=3,

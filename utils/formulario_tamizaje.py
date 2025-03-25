@@ -43,7 +43,7 @@ def crear_formulario_tamizaje(
         label="Descripción del antecedente médico", expand=True
     )
     tamizaje_fecha = ft.TextField(
-        label="Fecha Nacimiento (dd-mm-yyyy)",
+        label="Fecha del signo vital (dd-mm-yyyy)",
         width=ancho_campo,
         hint_text="Ej: 15-05-1990",
         on_change=lambda e: validar_fecha_campo(tamizaje_fecha),
