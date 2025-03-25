@@ -123,7 +123,7 @@ def PacientesScreen(page: ft.Page, id_usuario: int):
                                     ft.Column(
                                         [
                                             ft.Text(f"📋 ID: {paciente.id_paciente}"),
-                                            ft.Text(f"👤 Sexo: {paciente.sexo}"),
+                                            ft.Text(f" ⚥ Sexo: {paciente.sexo}"),
                                             ft.Text(f"🎂 Fecha Nac: {paciente.fecha_nacimiento}"),
                                             ft.Text(f"🔢 Edad: {edad}"),
                                             ft.Text(

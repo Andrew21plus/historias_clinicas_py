@@ -10,7 +10,7 @@ from .historia_clinica_crud import (
 from .historia_clinica_ui import crear_historia_clinica_ui
 from utils.formulario_historia_clinica import crear_formulario_historia_clinica
 from services.paciente_service import get_paciente, get_pacientes_by_id_usuario
-
+from ..pacientes.paciente_crud import calcular_edad
 
 def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
     selected_historia = None  # Variable para almacenar la historia clínica seleccionada
@@ -24,6 +24,15 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
         alert_dialog.content = ft.Text(message)
         alert_dialog.open = True
         page.update()
+    
+    def validar_campos_requeridos(campos):
+        campos_faltantes = [campo for campo in campos if not campo.value]
+        if campos_faltantes:
+            show_alert(
+                f"Por favor, complete los siguientes campos: {', '.join([campo.label for campo in campos_faltantes])}"
+            )
+            return False
+        return True
 
     def confirm_delete(confirmed):
         """Maneja la confirmación de eliminación."""
@@ -47,6 +56,7 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
 
         start_index = current_page * historias_per_page
         end_index = start_index + historias_per_page
+        
         for historia in all_historias[start_index:end_index]:
             paciente = get_paciente(historia.id_paciente)
             if paciente:
@@ -55,13 +65,25 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                 paciente_sexo = paciente.sexo
                 paciente_fecha_nacimiento = paciente.fecha_nacimiento
                 paciente_historia_clinica = paciente.num_historia_clinica
+                
+                # CALCULAR EDAD (asumiendo que fecha_nacimiento es YYYY-MM-DD)
+                try:
+                    from datetime import datetime
+                    fecha_nac = datetime.strptime(paciente_fecha_nacimiento, "%d-%m-%Y")
+                    hoy = datetime.now()
+                    edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+                    edad_str = f"{edad} años"
+                except:
+                    edad_str = "Fecha inválida"
             else:
                 paciente_nombre = "Desconocido"
                 paciente_apellido = ""
                 paciente_sexo = ""
                 paciente_fecha_nacimiento = ""
                 paciente_historia_clinica = ""
+                edad_str = ""
 
+            # Crear la card con los datos del paciente y la historia clínica
             historia_card = ft.Card(
                 content=ft.Container(
                     content=ft.Column(
@@ -69,7 +91,7 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                             ft.Row(
                                 [
                                     ft.Text(
-                                        f"Paciente: {paciente_nombre} {paciente_apellido}",
+                                        f"👤 Paciente: {paciente_nombre} {paciente_apellido}",
                                         weight=ft.FontWeight.BOLD,
                                         expand=True,
                                     ),
@@ -77,37 +99,45 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                                         [
                                             ft.IconButton(
                                                 ft.icons.EDIT,
-                                                on_click=lambda e, h=historia: open_edit_dialog(
-                                                    h
-                                                ),
+                                                icon_color=ft.colors.BLUE,
+                                                tooltip="Editar historia",
+                                                on_click=lambda e, h=historia: open_edit_dialog(h),
                                             ),
                                             # ft.IconButton(
                                             #     ft.icons.DELETE,
-                                            #     on_click=lambda e, h=historia: confirm_delete_dialog_handler(
-                                            #         h
-                                            #     ),
+                                            #     icon_color=ft.colors.RED,
+                                            #     tooltip="Eliminar historia",
+                                            #     on_click=lambda e, h=historia: confirm_delete_dialog_handler(h),
                                             # ),
-                                        ]
+                                        ],
+                                        spacing=5,
                                     ),
                                 ],
                                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                             ),
-                            ft.Text(f"Sexo: {paciente_sexo}"),
-                            ft.Text(
-                                f"Fecha de nacimiento: {paciente_fecha_nacimiento}"
+                            ft.Column(
+                                [
+                                    ft.Text(f" ⚥ Sexo: {paciente_sexo}"),
+                                    ft.Text(f"🎂 Fecha Nac: {paciente_fecha_nacimiento}"),
+                                    ft.Text(f"🔢 Edad: {edad_str}", color=ft.colors.BLUE_700),
+                                    ft.Text(f"🏥 HC: {paciente_historia_clinica}"),
+                                    ft.Divider(height=10, color=ft.colors.GREY_300),
+                                    ft.Text(f"📋 Motivo: {historia.motivo_consulta}"),
+                                    ft.Text(f"🤒 Enfermedad: {historia.enfermedad_actual}"),
+                                ],
+                                spacing=3,
                             ),
-                            ft.Text(f"Historia clínica: {paciente_historia_clinica}"),
-                            ft.Text(f"Motivo de consulta: {historia.motivo_consulta}"),
-                            ft.Text(f"Enfermedad actual: {historia.enfermedad_actual}"),
                         ],
-                        spacing=5,
-                        expand=True,
+                        spacing=8,
                     ),
-                    padding=10,
+                    padding=ft.padding.symmetric(vertical=10, horizontal=15),
                 ),
-                width=page.window_width * 0.95,  # type: ignore
+                elevation=3,
+                margin=ft.margin.symmetric(vertical=5),
+                width=page.window_width * 0.95,
             )
             historias_list.controls.append(historia_card)
+        
         page.update()
 
     # def confirm_delete_dialog_handler(historia):
@@ -119,24 +149,29 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
 
     def add_historia_clicked(e):
         """Agrega una nueva historia clínica."""
-        if all(
-            [historia_paciente.value, historia_motivo.value, historia_enfermedad.value]
-        ):
-            try:
-                agregar_historia_clinica(
-                    historia_paciente.value,
-                    historia_motivo.value,
-                    historia_enfermedad.value,
-                    id_usuario,
-                )
-                clear_fields()
-                refresh_historias()
-                paciente_search_field.value = ""
-                paciente_results.controls = []
-                form_panel.expanded = False
-                page.update()
-            except ValueError as e:
-                show_alert(f"Error al agregar historia clínica: {str(e)}")
+        # Validar campos requeridos
+        campos_requeridos = [historia_paciente, historia_motivo, historia_enfermedad]
+        
+        if not validar_campos_requeridos(campos_requeridos):
+            return
+
+        try:
+            agregar_historia_clinica(
+                historia_paciente.value,
+                historia_motivo.value,
+                historia_enfermedad.value,
+                id_usuario,
+            )
+            clear_fields()
+            refresh_historias()
+            paciente_search_field.value = ""
+            paciente_results.controls = []
+            form_panel.expanded = False
+            
+            page.update()
+            
+        except ValueError as e:
+            show_alert(f"Error al agregar historia clínica: {str(e)}")
 
     def open_edit_dialog(historia):
         """Abre el diálogo de edición para una historia clínica."""
@@ -151,11 +186,26 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
 
     def save_edit(e):
         """Guarda los cambios realizados en la historia clínica."""
-        actualizar_historia_clinica(
-            edit_id.value, edit_motivo.value, edit_enfermedad.value, id_usuario
-        )
-        edit_dialog.open = False
-        refresh_historias()
+        # Validar campos requeridos
+        campos_requeridos = [edit_motivo, edit_enfermedad]
+        
+        if not validar_campos_requeridos(campos_requeridos):
+            return
+
+        try:
+            actualizar_historia_clinica(
+                edit_id.value,
+                edit_motivo.value,
+                edit_enfermedad.value,
+                id_usuario
+            )
+            edit_dialog.open = False
+            refresh_historias()
+            
+            page.update()
+            
+        except Exception as e:
+            show_alert(f"Error al actualizar historia clínica: {str(e)}")
 
     def clear_fields():
         """Limpia los campos del formulario."""
