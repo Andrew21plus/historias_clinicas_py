@@ -1,5 +1,5 @@
 class Prescripcion:
-    def __init__(self, id_prescripcion, id_paciente, fecha, medicamento, dosis, indicaciones, firmado_por):
+    def __init__(self, id_prescripcion, id_paciente, fecha, medicamento, dosis, indicaciones, firmado_por, id_usuario):
         self.id_prescripcion = id_prescripcion
         self.id_paciente = id_paciente
         self.fecha = fecha
@@ -7,3 +7,4 @@ class Prescripcion:
         self.dosis = dosis
         self.indicaciones = indicaciones
         self.firmado_por = firmado_por
+        self.id_usuario = id_usuario

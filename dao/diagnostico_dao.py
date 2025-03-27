@@ -21,15 +21,15 @@ def get_diagnostico_by_id(id_diagnostico):
     return Diagnostico(*row) if row else None
 
 
-def add_diagnostico(id_paciente, fecha, diagnostico, cie, definitivo):
+def add_diagnostico(id_paciente, fecha, diagnostico, cie, definitivo, id_usuario):
     conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute(
         """
-        INSERT INTO Diagnosticos (id_paciente, fecha, diagnostico, cie, definitivo)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO Diagnosticos (id_paciente, fecha, diagnostico, cie, definitivo, id_usuario)
+        VALUES (?, ?, ?, ?, ?, ?)
     """,
-        (id_paciente, fecha, diagnostico, cie, definitivo),
+        (id_paciente, fecha, diagnostico, cie, definitivo, id_usuario),
     )
     conn.commit()
     conn.close()
@@ -54,3 +54,16 @@ def delete_diagnostico(id_diagnostico):
     conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("DELETE FROM Diagnosticos WHERE id_diagnostico = ?", (id_diagnostico,))
+
+def get_diagnosticos_by_paciente_and_fecha(id_paciente, fecha):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("""
+        SELECT * FROM Diagnosticos 
+        WHERE id_paciente = ? AND fecha = ?
+        ORDER BY fecha DESC
+    """, (id_paciente, fecha))
+    rows = c.fetchall()
+    diagnosticos = [Diagnostico(*row) for row in rows]
+    conn.close()
+    return diagnosticos

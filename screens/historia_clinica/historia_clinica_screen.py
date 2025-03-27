@@ -10,7 +10,7 @@ from .historia_clinica_crud import (
 from .historia_clinica_ui import crear_historia_clinica_ui
 from utils.formulario_historia_clinica import crear_formulario_historia_clinica
 from services.paciente_service import get_paciente, get_pacientes_by_id_usuario
-from ..pacientes.paciente_crud import calcular_edad
+
 
 def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
     selected_historia = None  # Variable para almacenar la historia clínica seleccionada

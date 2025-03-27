@@ -1,7 +1,10 @@
 import flet as ft
 from screens.pacientes.pacientes_screen import PacientesScreen
 from screens.historia_clinica.historia_clinica_screen import HistoriaClinicaScreen
-from screens.tamizaje.tamizaje_screen  import TamizajeScreen
+from screens.tamizaje.tamizaje_screen import TamizajeScreen
+from screens.evoluciones.evoluciones_screen import EvolucionesScreen
+from screens.certificados.certificados_screen import CertificadosScreen  # Nueva importación
+from screens.reportes.reportes_screen import ReportesScreen  # Nueva importación
 
 def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to_login):
     """Pantalla del menú principal con opciones de navegación y cierre de sesión"""
@@ -9,16 +12,21 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to
     # Función para cambiar el contenido principal
     def change_content(index):
         if index == 0:
-            content_area.content = PacientesScreen(page, id_usuario)  # Pasar id_usuario
+            content_area.content = PacientesScreen(page, id_usuario)
         elif index == 1:
             content_area.content = HistoriaClinicaScreen(page, id_usuario)
         elif index == 2:
-            content_area.content = TamizajeScreen(page, id_usuario)  # Nueva pantalla de Tamizaje
-        elif index == 3:  # Índice para el botón de cerrar sesión
-            # Limpiar el drawer antes de cerrar sesión
+            content_area.content = TamizajeScreen(page, id_usuario)
+        elif index == 3:
+            content_area.content = EvolucionesScreen(page, id_usuario)
+        elif index == 4:  # Nueva opción: Certificados
+            content_area.content = CertificadosScreen(page, id_usuario)
+        elif index == 5:  # Nueva opción: Reportes
+            content_area.content = ReportesScreen(page, id_usuario)
+        elif index == 6:  # Cerrar sesión (ahora en índice 6)
             page.drawer = None  # Eliminar el NavigationDrawer
-            page.update()  # Actualizar la página
-            go_to_login()  # Volver a la pantalla de login
+            page.update()
+            go_to_login()  # Volver al login
         page.update()
 
     # Información del usuario en el menú lateral
@@ -26,7 +34,7 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to
         content=ft.Column(
             [
                 ft.Text(f"{nombre} {apellido}", weight=ft.FontWeight.BOLD, size=16),
-                ft.Text(f"ID Usuario: {id_usuario}", italic=True, size=14, color=ft.colors.BLUE),  # Mostrar el ID del usuario
+                ft.Text(f"ID Usuario: {id_usuario}", italic=True, size=14, color=ft.colors.BLUE),
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             spacing=5,
@@ -37,8 +45,8 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to
     # Menú lateral (NavigationDrawer)
     drawer = ft.NavigationDrawer(
         controls=[
-            user_info,  # Mostrar la información del usuario arriba
-            ft.Divider(),  # Separador visual
+            user_info,
+            ft.Divider(),
             ft.NavigationDrawerDestination(
                 label="Pacientes",
                 icon=ft.icons.PEOPLE,
@@ -51,10 +59,25 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to
             ),
             ft.NavigationDrawerDestination(
                 label="Tamizaje",
-                icon=ft.icons.MONITOR_HEART,  # Icono relacionado con signos vitales
+                icon=ft.icons.MONITOR_HEART,
                 selected_icon=ft.icons.MONITOR_HEART_OUTLINED,
             ),
-            ft.Divider(),  # Separador visual
+            ft.NavigationDrawerDestination(
+                label="Evoluciones",
+                icon=ft.icons.TRENDING_UP,
+                selected_icon=ft.icons.TRENDING_UP_OUTLINED,
+            ),
+            ft.NavigationDrawerDestination(  # Nueva opción: Certificados
+                label="Certificados",
+                icon=ft.icons.ASSIGNMENT,
+                selected_icon=ft.icons.ASSIGNMENT_OUTLINED,
+            ),
+            ft.NavigationDrawerDestination(  # Nueva opción: Reportes
+                label="Reportes",
+                icon=ft.icons.ANALYTICS,
+                selected_icon=ft.icons.ANALYTICS_OUTLINED,
+            ),
+            ft.Divider(),
             ft.NavigationDrawerDestination(
                 label="Cerrar sesión",
                 icon=ft.icons.LOGOUT,
@@ -64,9 +87,9 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to
         on_change=lambda e: change_content(e.control.selected_index),
     )
 
-    # Área de contenido principal
+    # Área de contenido principal (inicia en Pacientes)
     content_area = ft.Container(
-        content=PacientesScreen(page, id_usuario),  # Contenido inicial (Pacientes)
+        content=PacientesScreen(page, id_usuario),
         expand=True,
         padding=20,
     )
