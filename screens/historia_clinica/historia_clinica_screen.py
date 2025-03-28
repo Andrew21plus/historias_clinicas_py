@@ -24,7 +24,7 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
         alert_dialog.content = ft.Text(message)
         alert_dialog.open = True
         page.update()
-    
+
     def validar_campos_requeridos(campos):
         campos_faltantes = [campo for campo in campos if not campo.value]
         if campos_faltantes:
@@ -56,7 +56,7 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
 
         start_index = current_page * historias_per_page
         end_index = start_index + historias_per_page
-        
+
         for historia in all_historias[start_index:end_index]:
             paciente = get_paciente(historia.id_paciente)
             if paciente:
@@ -65,13 +65,18 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                 paciente_sexo = paciente.sexo
                 paciente_fecha_nacimiento = paciente.fecha_nacimiento
                 paciente_historia_clinica = paciente.num_historia_clinica
-                
+
                 # CALCULAR EDAD (asumiendo que fecha_nacimiento es YYYY-MM-DD)
                 try:
                     from datetime import datetime
+
                     fecha_nac = datetime.strptime(paciente_fecha_nacimiento, "%d-%m-%Y")
                     hoy = datetime.now()
-                    edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+                    edad = (
+                        hoy.year
+                        - fecha_nac.year
+                        - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+                    )
                     edad_str = f"{edad} años"
                 except:
                     edad_str = "Fecha inválida"
@@ -101,7 +106,9 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                                                 ft.icons.EDIT,
                                                 icon_color=ft.colors.BLUE,
                                                 tooltip="Editar historia",
-                                                on_click=lambda e, h=historia: open_edit_dialog(h),
+                                                on_click=lambda e, h=historia: open_edit_dialog(
+                                                    h
+                                                ),
                                             ),
                                         ],
                                         spacing=5,
@@ -113,28 +120,37 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                                 [
                                     ft.Row(
                                         [
-                                            ft.Text(" ⚥  Sexo:", weight=ft.FontWeight.BOLD),
+                                            ft.Text(
+                                                " ⚥  Sexo:", weight=ft.FontWeight.BOLD
+                                            ),
                                             ft.Text(paciente_sexo),
                                         ],
                                         spacing=5,
                                     ),
                                     ft.Row(
                                         [
-                                            ft.Text("🎂 Fecha Nac:", weight=ft.FontWeight.BOLD),
+                                            ft.Text(
+                                                "🎂 Fecha Nac:",
+                                                weight=ft.FontWeight.BOLD,
+                                            ),
                                             ft.Text(paciente_fecha_nacimiento),
                                         ],
                                         spacing=5,
                                     ),
                                     ft.Row(
                                         [
-                                            ft.Text("🔢 Edad:", weight=ft.FontWeight.BOLD),
+                                            ft.Text(
+                                                "🔢 Edad:", weight=ft.FontWeight.BOLD
+                                            ),
                                             ft.Text(edad_str),
                                         ],
                                         spacing=5,
                                     ),
                                     ft.Row(
                                         [
-                                            ft.Text("🏥 HC:", weight=ft.FontWeight.BOLD),
+                                            ft.Text(
+                                                "🏥 HC:", weight=ft.FontWeight.BOLD
+                                            ),
                                             ft.Text(paciente_historia_clinica),
                                         ],
                                         spacing=5,
@@ -142,14 +158,19 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                                     ft.Divider(height=10, color=ft.colors.GREY_300),
                                     ft.Row(
                                         [
-                                            ft.Text("📋 Motivo:", weight=ft.FontWeight.BOLD),
+                                            ft.Text(
+                                                "📋 Motivo:", weight=ft.FontWeight.BOLD
+                                            ),
                                             ft.Text(historia.motivo_consulta),
                                         ],
                                         spacing=5,
                                     ),
                                     ft.Row(
                                         [
-                                            ft.Text("🤒 Enfermedad:", weight=ft.FontWeight.BOLD),
+                                            ft.Text(
+                                                "🤒 Enfermedad:",
+                                                weight=ft.FontWeight.BOLD,
+                                            ),
                                             ft.Text(historia.enfermedad_actual),
                                         ],
                                         spacing=5,
@@ -164,10 +185,10 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
                 ),
                 elevation=3,
                 margin=ft.margin.symmetric(vertical=5),
-                width=page.window_width * 0.95,
+                width=page.window_width * 0.95,  # type: ignore
             )
             historias_list.controls.append(historia_card)
-        
+
         page.update()
 
     # def confirm_delete_dialog_handler(historia):
@@ -181,7 +202,7 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
         """Agrega una nueva historia clínica."""
         # Validar campos requeridos
         campos_requeridos = [historia_paciente, historia_motivo, historia_enfermedad]
-        
+
         if not validar_campos_requeridos(campos_requeridos):
             return
 
@@ -197,9 +218,9 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
             paciente_search_field.value = ""
             paciente_results.controls = []
             form_panel.expanded = False
-            
+
             page.update()
-            
+
         except ValueError as e:
             show_alert(f"Error al agregar historia clínica: {str(e)}")
 
@@ -218,22 +239,19 @@ def HistoriaClinicaScreen(page: ft.Page, id_usuario: int):
         """Guarda los cambios realizados en la historia clínica."""
         # Validar campos requeridos
         campos_requeridos = [edit_motivo, edit_enfermedad]
-        
+
         if not validar_campos_requeridos(campos_requeridos):
             return
 
         try:
             actualizar_historia_clinica(
-                edit_id.value,
-                edit_motivo.value,
-                edit_enfermedad.value,
-                id_usuario
+                edit_id.value, edit_motivo.value, edit_enfermedad.value, id_usuario
             )
             edit_dialog.open = False
             refresh_historias()
-            
+
             page.update()
-            
+
         except Exception as e:
             show_alert(f"Error al actualizar historia clínica: {str(e)}")
 
