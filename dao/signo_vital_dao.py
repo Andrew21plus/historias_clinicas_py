@@ -121,7 +121,7 @@ def get_signos_vitales_by_paciente(id_paciente, id_usuario):
     return [SignoVital(*row) for row in rows]
 
 
-def get_signosvitales_hoy_dao(id_paciente, id_usuario):
+def get_signosvitales_hoy_dao(id_paciente, id_usuario, fecha):
     conn = get_connection()
     c = conn.cursor()
     c.execute(
@@ -130,11 +130,11 @@ def get_signosvitales_hoy_dao(id_paciente, id_usuario):
         FROM Signos_Vitales sv
         JOIN Pacientes p ON sv.id_paciente = p.id_paciente
         WHERE sv.id_paciente = ? 
-        AND sv.fecha = date('now') 
+        AND sv.fecha = ?
         AND p.id_usuario = ?
         """,
-        (id_paciente, id_usuario),
+        (id_paciente, fecha, id_usuario),  # Pasamos la fecha como tercer argumento
     )
-    row = c.fetchone()  # Cambiado a fetchone ya que esperamos solo un registro por día
+    row = c.fetchone()  # Obtenemos un solo registro (si existe)
     conn.close()
     return SignoVital(*row) if row else None

@@ -110,7 +110,9 @@ def obtener_signos_vitales_paciente(id_paciente, id_usuario):
 
 def obtener_signos_hoy(id_paciente, id_usuario):
     """Obtiene los signos vitales del paciente de hoy"""
-    return get_signos_vitales_hoy(id_paciente, id_usuario)
+    return get_signos_vitales_hoy(
+        id_paciente, id_usuario, datetime.datetime.now().strftime("%d-%m-%Y")
+    )
 
 
 def obtener_cie(search_query=""):

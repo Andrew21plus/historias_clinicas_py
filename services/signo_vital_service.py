@@ -77,5 +77,5 @@ def get_signos_vitales_by_paciente(id_paciente, id_usuario):
     return get_signos_vitales_by_paciente_dao(id_paciente, id_usuario)
 
 
-def get_signos_vitales_hoy(id_paciente, id_usuario):
-    return get_signosvitales_hoy_dao(id_paciente, id_usuario)
+def get_signos_vitales_hoy(id_paciente, id_usuario, fecha):
+    return get_signosvitales_hoy_dao(id_paciente, id_usuario, fecha)
