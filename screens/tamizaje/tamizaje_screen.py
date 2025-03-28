@@ -35,7 +35,7 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
             )
             return False
         return True
-        
+
     # def confirm_delete(confirmed):
     #     """Maneja la confirmación de eliminación."""
     #     nonlocal selected_tamizaje
@@ -54,12 +54,14 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
         """Actualiza la lista de tamizajes (antecedentes médicos y signos vitales)."""
         nonlocal all_tamizajes
         tamizajes_list.controls.clear()
-        all_tamizajes = obtener_tamizajes(id_usuario, search_query)  # Usar la función de tamizaje_crud
+        all_tamizajes = obtener_tamizajes(
+            id_usuario, search_query
+        )  # Usar la función de tamizaje_crud
 
         # Paginación
         start_index = current_page * tamizajes_per_page
         end_index = start_index + tamizajes_per_page
-        
+
         for tamizaje in all_tamizajes[start_index:end_index]:
             paciente = tamizaje["paciente"]
             antecedentes = tamizaje["antecedentes"]
@@ -83,7 +85,9 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                             ),
                             ft.Row(
                                 [
-                                    ft.Text("📝 Descripción:", weight=ft.FontWeight.BOLD),
+                                    ft.Text(
+                                        "📝 Descripción:", weight=ft.FontWeight.BOLD
+                                    ),
                                     ft.Text(antecedente.descripcion),
                                 ],
                                 spacing=5,
@@ -94,7 +98,9 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                                         ft.icons.EDIT,
                                         icon_color=ft.colors.BLUE,
                                         tooltip="Editar antecedente",
-                                        on_click=lambda e, t=antecedente: open_edit_dialog(t),
+                                        on_click=lambda e, t=antecedente: open_edit_dialog(
+                                            t
+                                        ),
                                     ),
                                 ],
                                 alignment=ft.MainAxisAlignment.END,
@@ -125,28 +131,39 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                             ),
                             ft.Row(
                                 [
-                                    ft.Text("💓 Presión arterial:", weight=ft.FontWeight.BOLD),
+                                    ft.Text(
+                                        "� Presión arterial:",
+                                        weight=ft.FontWeight.BOLD,
+                                    ),
                                     ft.Text(signo.presion_arterial),
                                 ],
                                 spacing=5,
                             ),
                             ft.Row(
                                 [
-                                    ft.Text("❤️ Frecuencia cardíaca:", weight=ft.FontWeight.BOLD),
+                                    ft.Text(
+                                        "❤️ Frecuencia cardíaca:",
+                                        weight=ft.FontWeight.BOLD,
+                                    ),
                                     ft.Text(signo.frecuencia_cardiaca),
                                 ],
                                 spacing=5,
                             ),
                             ft.Row(
                                 [
-                                    ft.Text("🌬️ Frecuencia respiratoria:", weight=ft.FontWeight.BOLD),
+                                    ft.Text(
+                                        "🌬️ Frecuencia respiratoria:",
+                                        weight=ft.FontWeight.BOLD,
+                                    ),
                                     ft.Text(signo.frecuencia_respiratoria),
                                 ],
                                 spacing=5,
                             ),
                             ft.Row(
                                 [
-                                    ft.Text(" 🌡️ Temperatura:", weight=ft.FontWeight.BOLD),
+                                    ft.Text(
+                                        " 🌡️ Temperatura:", weight=ft.FontWeight.BOLD
+                                    ),
                                     ft.Text(signo.temperatura),
                                 ],
                                 spacing=5,
@@ -160,7 +177,7 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                             ),
                             ft.Row(
                                 [
-                                    ft.Text("📏 Talla:", weight=ft.FontWeight.BOLD),
+                                    ft.Text("� Talla:", weight=ft.FontWeight.BOLD),
                                     ft.Text(signo.talla),
                                 ],
                                 spacing=5,
@@ -201,7 +218,7 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                 ),
                 elevation=3,
                 margin=ft.margin.symmetric(vertical=5),
-                width=page.window_width * 0.95,
+                width=page.window_width * 0.95,  # type: ignore
             )
 
             tamizajes_list.controls.append(tamizaje_card)
@@ -227,9 +244,9 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
             tamizaje_frecuencia_respiratoria,
             tamizaje_temperatura,
             tamizaje_peso,
-            tamizaje_talla
+            tamizaje_talla,
         ]
-        
+
         if not validar_campos_requeridos(campos_requeridos):
             return
 
@@ -300,22 +317,24 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
     def save_edit(e):
         """Guarda los cambios realizados en el tamizaje."""
         nonlocal selected_tamizaje
-        
+
         # Validar campos requeridos
         campos_requeridos = []
         if hasattr(selected_tamizaje, "tipo"):
             campos_requeridos.extend([edit_tipo, edit_descripcion])
         else:
-            campos_requeridos.extend([
-                edit_fecha,
-                edit_presion_arterial,
-                edit_frecuencia_cardiaca,
-                edit_frecuencia_respiratoria,
-                edit_temperatura,
-                edit_peso,
-                edit_talla
-            ])
-        
+            campos_requeridos.extend(
+                [
+                    edit_fecha,
+                    edit_presion_arterial,
+                    edit_frecuencia_cardiaca,
+                    edit_frecuencia_respiratoria,
+                    edit_temperatura,
+                    edit_peso,
+                    edit_talla,
+                ]
+            )
+
         if not validar_campos_requeridos(campos_requeridos):
             return
 
@@ -323,14 +342,40 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
             actualizar_tamizaje(
                 selected_tamizaje,
                 tipo=edit_tipo.value if hasattr(selected_tamizaje, "tipo") else None,
-                descripcion=edit_descripcion.value if hasattr(selected_tamizaje, "tipo") else None,
-                fecha=edit_fecha.value if not hasattr(selected_tamizaje, "tipo") else None,
-                presion_arterial=edit_presion_arterial.value if not hasattr(selected_tamizaje, "tipo") else None,
-                frecuencia_cardiaca=edit_frecuencia_cardiaca.value if not hasattr(selected_tamizaje, "tipo") else None,
-                frecuencia_respiratoria=edit_frecuencia_respiratoria.value if not hasattr(selected_tamizaje, "tipo") else None,
-                temperatura=edit_temperatura.value if not hasattr(selected_tamizaje, "tipo") else None,
-                peso=edit_peso.value if not hasattr(selected_tamizaje, "tipo") else None,
-                talla=edit_talla.value if not hasattr(selected_tamizaje, "tipo") else None,
+                descripcion=(
+                    edit_descripcion.value
+                    if hasattr(selected_tamizaje, "tipo")
+                    else None
+                ),
+                fecha=(
+                    edit_fecha.value if not hasattr(selected_tamizaje, "tipo") else None
+                ),
+                presion_arterial=(
+                    edit_presion_arterial.value
+                    if not hasattr(selected_tamizaje, "tipo")
+                    else None
+                ),
+                frecuencia_cardiaca=(
+                    edit_frecuencia_cardiaca.value
+                    if not hasattr(selected_tamizaje, "tipo")
+                    else None
+                ),
+                frecuencia_respiratoria=(
+                    edit_frecuencia_respiratoria.value
+                    if not hasattr(selected_tamizaje, "tipo")
+                    else None
+                ),
+                temperatura=(
+                    edit_temperatura.value
+                    if not hasattr(selected_tamizaje, "tipo")
+                    else None
+                ),
+                peso=(
+                    edit_peso.value if not hasattr(selected_tamizaje, "tipo") else None
+                ),
+                talla=(
+                    edit_talla.value if not hasattr(selected_tamizaje, "tipo") else None
+                ),
             )
             edit_dialog.open = False
             refresh_tamizajes()
