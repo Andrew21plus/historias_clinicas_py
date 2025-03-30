@@ -205,7 +205,12 @@ def crear_evoluciones_ui(
             width=900,
         ),
         actions=[
-            ft.TextButton("Guardar Todo", on_click=lambda e: save_full_consultation(e)),
+            ft.TextButton(
+                "Guardar Todo",
+                on_click=lambda e: save_full_consultation(
+                    e, new_consult_paciente_id.value
+                ),
+            ),
             ft.TextButton("Atrás", on_click=lambda e: open_tratamientos_dialog()),
             ft.TextButton("Cancelar", on_click=close_all_dialogs),
         ],

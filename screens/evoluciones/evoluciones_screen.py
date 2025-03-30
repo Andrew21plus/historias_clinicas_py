@@ -28,7 +28,6 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
     search_query = ""
     all_historias = []
     selected_historia = None
-    signos_vitales_disponibles_hoy = False
 
     def show_alert(message):
         alert_dialog.content = ft.Text(message)
@@ -629,7 +628,6 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
                 signos_talla.value = ""
                 open_signos_dialog()
             else:
-                signos_vitales_disponibles_hoy = True
                 open_diagnostico_dialog(from_signos=False)
 
             # Abrir primer diálogo
@@ -725,16 +723,17 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         consulta_dialog.open = True
         page.update()
 
-    def save_full_consultation(e):
+    def save_full_consultation(e, id_paciente):
+        print("[save_full_consultation] id_paciente: ", id_paciente)
         if not consulta_nota.value:
             show_alert("La nota de consulta es obligatorio")
             time.sleep(1)
             open_consulta_dialog()
             return
-
+        signos_vitales_disponibles_hoy = obtener_signos_hoy(id_paciente, id_usuario)
         # Esta función se llamará al final para guardar todo
         try:
-            if signos_vitales_disponibles_hoy == False:
+            if signos_vitales_disponibles_hoy is None:
                 # 1. Guardar signos vitales
                 result_signos_vitales = guardar_signos_vitales(
                     {
@@ -807,7 +806,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
             consulta_nota.value = ""
 
             show_alert(
-                f"{result_signos_vitales}\n{result_diagnostico}\n{result_prescripcion}\n{result_tratamiento}\n{result_consulta}"
+                f"{result_signos_vitales if signos_vitales_disponibles_hoy is None else ''}\n{result_diagnostico}\n{result_prescripcion}\n{result_tratamiento}\n{result_consulta}"
             )
             close_all_dialogs()
             refresh_pacientes()
