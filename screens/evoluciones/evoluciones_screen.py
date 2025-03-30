@@ -1,4 +1,5 @@
 import flet as ft
+import uuid
 import time
 from .evoluciones_crud import (
     obtener_historias_clinicas,
@@ -28,6 +29,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
     search_query = ""
     all_historias = []
     selected_historia = None
+    medicamentos_data = {}
 
     def show_alert(message):
         alert_dialog.content = ft.Text(message)
@@ -696,13 +698,8 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         page.update()
 
     def open_tratamientos_dialog():
-        if (
-            not presc_medicamento.value
-            or not presc_dosis.value
-            or not presc_indicaciones.value
-            or not presc_firmado_por.value
-        ):
-            show_alert("Es necesario llenar todos los campos de la prescripción")
+        if len(prescripciones_lista.controls) == 0:
+            show_alert("Debe agregar al menos un medicamento")
             time.sleep(1)
             open_prescripciones_dialog()
             return
@@ -759,17 +756,25 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
             )
 
             # 3. Guardar prescripciones
-            result_prescripcion = guardar_prescripcion(
-                {
-                    "id_paciente": new_consult_paciente_id.value,
-                    "id_usuario": id_usuario,
-                    "medicamento": presc_medicamento.value,
-                    "dosis": presc_dosis.value,
-                    "indicaciones": presc_indicaciones.value,
-                    "firmado_por": presc_firmado_por.value,
-                    "fecha": presc_fecha.value,
-                }
-            )
+            for med_tile in prescripciones_lista.controls:
+                info_column = med_tile.content.controls[0]
+                full_text = info_column.controls[0].value
+                medicamento, dosis = full_text.split(" - ")
+                indicaciones = info_column.controls[1].value
+                if indicaciones == "Sin indicaciones":
+                    indicaciones = ""
+
+                result_prescripcion = guardar_prescripcion(
+                    {
+                        "id_paciente": new_consult_paciente_id.value,
+                        "id_usuario": id_usuario,
+                        "medicamento": medicamento,
+                        "dosis": dosis,
+                        "indicaciones": indicaciones,
+                        "firmado_por": presc_firmado_por.value,
+                        "fecha": presc_fecha.value,
+                    }
+                )
 
             # 4. Guardar tratamientos
             result_tratamiento = guardar_tratamiento(
@@ -879,6 +884,135 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         diagnostico_definitivo.value = "Presuntivo"
         page.update()
 
+    # Función para agregar un medicamento a la lista
+    def agregar_medicamento(e):
+        if not presc_medicamento.value or not presc_dosis.value:
+            show_alert("Medicamento y dosis son obligatorios")
+            return
+
+        # Crear ID único y empaquetar los datos
+        med_id = str(uuid.uuid4())
+        med_data = {
+            "medicamento": presc_medicamento.value,
+            "dosis": presc_dosis.value,
+            "indicaciones": presc_indicaciones.value or "",
+        }
+
+        if hasattr(presc_medicamento, "editing_id"):
+            # Actualizamos el medicamento en modo edición
+            for tile in prescripciones_lista.controls:
+                if (
+                    medicamentos_data.get(id(tile))
+                    and medicamentos_data[id(tile)]["id"]
+                    == presc_medicamento.editing_id
+                ):
+                    info_column = tile.content.controls[
+                        0
+                    ]  # asumiendo estructura: Row > Column de info
+                    info_column.controls[0].value = (
+                        f"{med_data['medicamento']} - {med_data['dosis']}"
+                    )
+                    info_column.controls[1].value = (
+                        med_data["indicaciones"] or "Sin indicaciones"
+                    )
+                    medicamentos_data[id(tile)] = {"id": med_id, **med_data}
+                    break
+            delattr(presc_medicamento, "editing_id")
+        else:
+            # Crear nuevo medicamento (ejemplo similar a lo que ya tienes)
+            info_column = ft.Column(
+                controls=[
+                    ft.Text(
+                        f"{med_data['medicamento']} - {med_data['dosis']}",
+                        weight=ft.FontWeight.BOLD,
+                    ),
+                    ft.Text(med_data["indicaciones"] or "Sin indicaciones"),
+                ],
+                expand=True,
+            )
+            btn_editar = ft.IconButton(
+                icon=ft.icons.EDIT,
+                on_click=lambda e, tile=None: None,  # Se asignará después
+            )
+            btn_eliminar = ft.IconButton(
+                icon=ft.icons.DELETE, on_click=lambda e, tile=None: None
+            )
+            btn_row = ft.Row(controls=[btn_editar, btn_eliminar])
+            row_container = ft.Row(
+                controls=[info_column, btn_row],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            )
+            nuevo_tile = ft.Container(
+                width=900,
+                padding=10,
+                border=ft.border.all(1, ft.colors.GREY_300),
+                content=row_container,
+            )
+            # Asignar funciones a los botones usando lambda para capturar el tile
+            btn_editar.on_click = lambda e, tile=nuevo_tile: editar_medicamento(e, tile)
+            btn_eliminar.on_click = lambda e, tile=nuevo_tile: eliminar_medicamento(
+                e, tile
+            )
+            medicamentos_data[id(nuevo_tile)] = {"id": med_id, **med_data}
+            prescripciones_lista.controls.append(nuevo_tile)
+
+        # Limpiar campos y restaurar botones al modo por defecto
+        presc_medicamento.value = ""
+        presc_dosis.value = ""
+        presc_indicaciones.value = ""
+        update_action_buttons("default")
+        prescripciones_lista.update()
+        page.update()
+
+    def editar_medicamento(e, tile):
+        # Extraer los datos del medicamento desde el diccionario
+        med_data = medicamentos_data.get(id(tile), {})
+        presc_medicamento.value = med_data.get("medicamento", "")
+        presc_dosis.value = med_data.get("dosis", "")
+        presc_indicaciones.value = med_data.get("indicaciones", "")
+        presc_medicamento.editing_id = med_data.get("id", "")
+        update_action_buttons("edit")
+        page.update()
+
+    def eliminar_medicamento(e, tile):
+        if id(tile) in medicamentos_data:
+            del medicamentos_data[id(tile)]
+        prescripciones_lista.controls.remove(tile)
+        prescripciones_lista.update()
+        page.update()
+
+    def cancelar_edicion(e):
+        presc_medicamento.value = ""
+        presc_dosis.value = ""
+        presc_indicaciones.value = ""
+        if hasattr(presc_medicamento, "editing_id"):
+            delattr(presc_medicamento, "editing_id")
+        update_action_buttons("default")
+        page.update()
+
+    def update_agregar_btn(text, on_click):
+        # Se recorre el contenido del diálogo para actualizar el botón de agregar
+        for control in prescripciones_dialog.content.controls:
+            if isinstance(control, ft.Row):
+                for btn in control.controls:
+                    if isinstance(btn, ft.ElevatedButton):
+                        btn.text = text
+                        btn.on_click = on_click
+                        break
+
+    def update_action_buttons(mode):
+        if mode == "edit":
+            btn_agregar.visible = False
+            btn_guardar.visible = True
+            btn_cancelar.visible = True
+        else:  # modo "default"
+            btn_agregar.visible = True
+            btn_guardar.visible = False
+            btn_cancelar.visible = False
+        btn_agregar.update()
+        btn_guardar.update()
+        btn_cancelar.update()
+
     # UI
     ui = crear_evoluciones_ui(
         page,
@@ -891,6 +1025,8 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         open_signos_dialog,
         open_tratamientos_dialog,
         open_consulta_dialog,
+        agregar_medicamento,
+        cancelar_edicion,
         save_full_consultation,
         close_all_dialogs,
     )
@@ -921,11 +1057,15 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
     diagnostico_definitivo = ui["diagnostico_definitivo"]
     cie_list = ui["cie_list"]
     diagnostico_dialog = ui["diagnostico_dialog"]
+    prescripciones_lista = ui["prescripciones_lista"]
     presc_medicamento = ui["presc_medicamento"]
     presc_dosis = ui["presc_dosis"]
     presc_indicaciones = ui["presc_indicaciones"]
     presc_firmado_por = ui["presc_firmado_por"]
     presc_fecha = ui["presc_fecha"]
+    btn_agregar = ui["btn_agregar"]
+    btn_guardar = ui["btn_guardar"]
+    btn_cancelar = ui["btn_cancelar"]
     prescripciones_dialog = ui["prescripciones_dialog"]
     tratamiento_descripcion = ui["tratamiento_descripcion"]
     tratamiento_fecha = ui["tratamiento_fecha"]

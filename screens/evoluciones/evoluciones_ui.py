@@ -12,6 +12,8 @@ def crear_evoluciones_ui(
     open_signos_dialog,
     open_tratamientos_dialog,
     open_consulta_dialog,
+    agregar_medicamento,
+    cancelar_edicion,
     save_full_consultation,
     close_all_dialogs,
 ):
@@ -141,20 +143,50 @@ def crear_evoluciones_ui(
     )
 
     # --- Diálogo 3: Prescripciones ---
+    prescripciones_lista = ft.ListView(
+        expand=True,
+        spacing=10,
+        height=200,  # Altura fija para el scroll
+        auto_scroll=True,
+    )
     presc_fecha = ft.TextField(label="Fecha", disabled=True)
     presc_medicamento = ft.TextField(label="Medicamento*")
     presc_dosis = ft.TextField(label="Dosis*")
     presc_indicaciones = ft.TextField(label="Indicaciones", multiline=True)
     presc_firmado_por = ft.TextField(label="Firmado por", disabled=True)
 
+    # Definir botones de acción con visibilidad controlada
+    btn_agregar = ft.ElevatedButton("Agregar Medicamento", on_click=agregar_medicamento)
+    btn_guardar = ft.ElevatedButton(
+        "Guardar cambios", on_click=agregar_medicamento, visible=False
+    )
+    btn_cancelar = ft.ElevatedButton(
+        "Cancelar edición", on_click=lambda e: cancelar_edicion(e), visible=False
+    )
+
     prescripciones_dialog = ft.AlertDialog(
         modal=True,
         title=ft.Text("Prescripciones Médicas"),
         content=ft.Column(
             [
+                ft.Text("Medicamentos prescritos:", weight=ft.FontWeight.BOLD),
+                ft.Container(
+                    content=prescripciones_lista, height=200, border=ft.border.all(1)
+                ),
+                ft.Divider(),
+                ft.Text("Agregar nuevo medicamento:", weight=ft.FontWeight.BOLD),
                 ft.Row([presc_medicamento, presc_dosis]),
-                ft.Row([presc_indicaciones, presc_firmado_por]),
-                presc_fecha,
+                presc_indicaciones,
+                # Usamos una fila fija para los botones de acción
+                ft.Row(
+                    [
+                        presc_firmado_por,
+                        presc_fecha,
+                        btn_agregar,
+                        btn_guardar,
+                        btn_cancelar,
+                    ],
+                ),
             ],
             spacing=10,
             width=900,
@@ -263,11 +295,15 @@ def crear_evoluciones_ui(
         "diagnostico_definitivo": diagnostico_definitivo,
         "cie_list": cie_list,
         "diagnostico_dialog": diagnostico_dialog,
+        "prescripciones_lista": prescripciones_lista,
         "presc_medicamento": presc_medicamento,
         "presc_dosis": presc_dosis,
         "presc_indicaciones": presc_indicaciones,
         "presc_firmado_por": presc_firmado_por,
         "presc_fecha": presc_fecha,
+        "btn_agregar": btn_agregar,
+        "btn_guardar": btn_guardar,
+        "btn_cancelar": btn_cancelar,
         "prescripciones_dialog": prescripciones_dialog,
         "tratamiento_descripcion": tratamiento_descripcion,
         "tratamiento_fecha": tratamiento_fecha,
