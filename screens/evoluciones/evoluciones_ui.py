@@ -74,7 +74,7 @@ def crear_evoluciones_ui(
     signos_talla = ft.TextField(label="Talla")
 
     signos_dialog = ft.AlertDialog(
-        modal=False,
+        modal=True,
         title=ft.Text("Signos Vitales"),
         content=ft.Column(
             [
@@ -84,7 +84,7 @@ def crear_evoluciones_ui(
                 ft.Row([signos_peso, signos_talla]),
             ],
             spacing=10,
-            width=500,
+            width=900,
         ),
         actions=[
             ft.TextButton("Continuar", on_click=lambda e: open_diagnostico_dialog()),
@@ -106,7 +106,7 @@ def crear_evoluciones_ui(
     cie_list = ft.ListView(expand=True, spacing=10)
 
     diagnostico_dialog = ft.AlertDialog(
-        modal=False,
+        modal=True,
         title=ft.Text("Diagnóstico"),
         content=ft.Column(
             [
@@ -114,7 +114,7 @@ def crear_evoluciones_ui(
                 ft.Container(
                     content=cie_list,
                     height=200,
-                    width=500,
+                    width=900,
                     border=ft.border.all(1, ft.colors.GREY_300),
                 ),
                 diagnostico_cie_id,
@@ -138,7 +138,7 @@ def crear_evoluciones_ui(
     presc_firmado_por = ft.TextField(label="Firmado por")
 
     prescripciones_dialog = ft.AlertDialog(
-        modal=False,
+        modal=True,
         title=ft.Text("Prescripciones Médicas"),
         content=ft.Column(
             [
@@ -147,7 +147,7 @@ def crear_evoluciones_ui(
                 presc_fecha,
             ],
             spacing=10,
-            width=500,
+            width=900,
         ),
         actions=[
             ft.TextButton("Continuar", on_click=lambda e: open_tratamientos_dialog()),
@@ -161,7 +161,7 @@ def crear_evoluciones_ui(
     tratamiento_fecha = ft.TextField(label="Fecha", disabled=True)
 
     tratamientos_dialog = ft.AlertDialog(
-        modal=False,
+        modal=True,
         title=ft.Text("Tratamientos y Procedimientos"),
         content=ft.Column(
             [
@@ -169,7 +169,7 @@ def crear_evoluciones_ui(
                 tratamiento_fecha,
             ],
             spacing=10,
-            width=500,
+            width=900,
         ),
         actions=[
             ft.TextButton("Guardar Todo", on_click=save_full_consultation),
