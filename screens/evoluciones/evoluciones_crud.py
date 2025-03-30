@@ -18,13 +18,13 @@ from services.prescripcion_service import (
     add_prescripcion,
 )
 from services.tratamiento_service import get_tratamientos_by_consulta, add_tratamiento
-from services.evolucion_service import get_evoluciones_by_consulta
+from services.evolucion_service import get_evoluciones_by_consulta, add_evolucion
 from services.cie_service import get_cie
 
 
 def obtener_historias_clinicas(id_usuario, search_query=""):
     """Obtiene historias clínicas solo de pacientes con tamizaje completo, evitando duplicados"""
-    
+
     def normalize_string(s):
         if not s:
             return ""
@@ -37,15 +37,15 @@ def obtener_historias_clinicas(id_usuario, search_query=""):
 
     # Obtener todas las historias clínicas
     historias = get_historias_clinicas_by_usuario(id_usuario)
-    
+
     # Diccionario para evitar duplicados por paciente
     historias_unicas = {}
-    
+
     for historia in historias:
         # Verificar si ya tenemos una historia para este paciente
         if historia.id_paciente in historias_unicas:
             continue
-            
+
         # Verificar requisitos (antecedentes y signos vitales)
         antecedentes = get_antecedentes_medicos_by_paciente(
             historia.id_paciente, id_usuario
@@ -65,25 +65,27 @@ def obtener_historias_clinicas(id_usuario, search_query=""):
         normalized_query = normalize_string(search_query)
         resultados_busqueda = []
         pacientes_vistos = set()
-        
+
         for h in historias_filtradas:
             paciente = get_paciente(h.id_paciente)
             if not paciente:
                 continue
-                
+
             # Verificar si ya procesamos este paciente
             if paciente.id_paciente in pacientes_vistos:
                 continue
             pacientes_vistos.add(paciente.id_paciente)
-            
+
             # Buscar en nombre y apellido
-            if (normalized_query in normalize_string(paciente.nombre)) or \
-               (normalized_query in normalize_string(paciente.apellido)):
+            if (normalized_query in normalize_string(paciente.nombre)) or (
+                normalized_query in normalize_string(paciente.apellido)
+            ):
                 resultados_busqueda.append(h)
-                
+
         historias_filtradas = resultados_busqueda
 
     return historias_filtradas
+
 
 def actualizar_historia_clinica(
     id_historia, motivo_consulta, enfermedad_actual, id_usuario
@@ -166,13 +168,15 @@ def guardar_signos_vitales(signos_vitales):
 def guardar_diagnostico(diagnostico):
     """Guardar diagnostico del paciente"""
     print(f"[evoluciones_crud] diagnostico: {diagnostico}")
+    definitivo = 1 if diagnostico["definitivo"] == "Definitivo" else 0
+    print("               definitivo toma el valor de: ", definitivo)
 
     add_diagnostico(
         diagnostico["id_paciente"],
         datetime.datetime.now().strftime("%d-%m-%Y"),
         diagnostico["descripcion_cie"],
         diagnostico["codigo_cie"],
-        1,  # Definitivo, no se que significa el 1 o cuando no debería ir el 1
+        definitivo,
         diagnostico["id_usuario"],
     )
     return "Diagnostico guardado"
@@ -203,3 +207,16 @@ def guardar_tratamiento(tratamiento):
         tratamiento["id_usuario"],
     )
     return "Tratamiento guardado"
+
+
+def guardar_evolucion(evolucion):
+    """Guardar evolucion del paciente"""
+    print(f"[evoluciones_crud] evolucion: {evolucion}")
+    add_evolucion(
+        evolucion["id_paciente"],
+        datetime.datetime.now().strftime("%d-%m-%Y"),
+        datetime.datetime.now().strftime("%H:%M:%S"),
+        evolucion["nota"],
+        evolucion["id_usuario"],
+    )
+    return "Evolucion guardada"

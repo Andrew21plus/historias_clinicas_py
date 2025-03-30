@@ -15,18 +15,20 @@ from .evoluciones_crud import (
     guardar_diagnostico,
     guardar_prescripcion,
     guardar_tratamiento,
+    guardar_evolucion,
 )
 from services.paciente_service import get_paciente
 from datetime import datetime
 from .evoluciones_ui import crear_evoluciones_ui
 
 
-def EvolucionesScreen(page: ft.Page, id_usuario: int):
+def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str):
     current_page = 0
     pacientes_per_page = 5
     search_query = ""
     all_historias = []
     selected_historia = None
+    signos_vitales_disponibles_hoy = False
 
     def show_alert(message):
         alert_dialog.content = ft.Text(message)
@@ -403,11 +405,31 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
             ]
 
             if secciones:
+                # Obtener todas las notas de evolución
+                notas_evolucion = [
+                    e.notas for e in consulta.get("evoluciones", []) if e.notas
+                ]
+
+                # Crear el contenido del título con las notas
+                titulo_con_notas = ft.Column(
+                    controls=[
+                        ft.Text(f"📅 Consulta del {fecha}", weight=ft.FontWeight.BOLD),
+                        *[
+                            ft.Text(
+                                f"Nota: {nota}",
+                                style=ft.TextStyle(italic=True),
+                                color=ft.colors.GREY_600,
+                                size=12,
+                            )
+                            for nota in notas_evolucion
+                        ],
+                    ],
+                    spacing=0,
+                )
+
                 consultas_ui.append(
                     ft.ExpansionTile(
-                        title=ft.Text(
-                            f"📅 Consulta del {fecha}", weight=ft.FontWeight.BOLD
-                        ),
+                        title=titulo_con_notas,
                         controls=secciones,
                         initially_expanded=False,
                     )
@@ -579,6 +601,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
     #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
     #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
     #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
+
     def open_create_dialog(id_paciente, id_usuario):
         print(f"[evidencias_screen] open_create_dialog id_usuario: {id_usuario}")
         try:
@@ -596,16 +619,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
             # Verificar si hay signos vitales hoy
             signos_hoy = obtener_signos_hoy(id_paciente, id_usuario)
             print(f"[evoluciones_screen] signos_hoy: {signos_hoy}")
-            if signos_hoy is not None:
-                # Autocompletar con valores existentes
-                # signos_presion.value = getattr(signos_hoy, "presion_arterial", "") or ""
-                signos_presion.value = signos_hoy.presion_arterial or ""
-                signos_frec_cardiaca.value = signos_hoy.frecuencia_cardiaca or ""
-                signos_frec_respi.value = signos_hoy.frecuencia_respiratoria or ""
-                signos_temp.value = signos_hoy.temperatura or ""
-                signos_peso.value = signos_hoy.peso or ""
-                signos_talla.value = signos_hoy.talla or ""
-            else:
+            if signos_hoy is None:
                 # Limpiar campos para llenar manualmente
                 signos_presion.value = ""
                 signos_frec_cardiaca.value = ""
@@ -613,9 +627,12 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
                 signos_temp.value = ""
                 signos_peso.value = ""
                 signos_talla.value = ""
+                open_signos_dialog()
+            else:
+                signos_vitales_disponibles_hoy = True
+                open_diagnostico_dialog(from_signos=False)
 
             # Abrir primer diálogo
-            open_signos_dialog()
             page.update()
 
         except Exception as ex:
@@ -626,9 +643,9 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
         signos_dialog.open = True
         page.update()
 
-    def open_diagnostico_dialog():
+    def open_diagnostico_dialog(from_signos=True):
         # Validar signos vitales primero si es necesario
-        if (
+        if from_signos and (
             not signos_presion.value
             or not signos_frec_cardiaca.value
             or not signos_frec_respi.value
@@ -641,19 +658,40 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
             open_signos_dialog()
             return
 
+        if not from_signos:
+            diagnostico_dialog.actions = [
+                ft.TextButton(
+                    "Continuar", on_click=lambda e: open_prescripciones_dialog()
+                ),
+                ft.TextButton("Cancelar", on_click=close_all_dialogs),
+            ]
+        else:
+            diagnostico_dialog.actions = [
+                ft.TextButton(
+                    "Continuar", on_click=lambda e: open_prescripciones_dialog()
+                ),
+                ft.TextButton("Atrás", on_click=lambda e: open_signos_dialog()),
+                ft.TextButton("Cancelar", on_click=close_all_dialogs),
+            ]
+
         close_all_dialogs()
         diagnostico_dialog.open = True
         page.update()
 
     def open_prescripciones_dialog():
         # Validar diagnóstico primero
-        if not diagnostico_cie.value:
+        if (
+            not diagnostico_cie.value
+            or not diagnostico_cie_descripcion.value
+            or not diagnostico_definitivo.value
+        ):
             show_alert("El código CIE es obligatorio")
             time.sleep(1)
-            open_diagnostico_dialog()
+            open_diagnostico_dialog(from_signos=False)
             return
 
         presc_fecha.value = datetime.now().strftime("%Y-%m-%d")
+        presc_firmado_por.value = f"Dr. {nombre.capitalize()} {apellido.capitalize()}"
 
         close_all_dialogs()
         prescripciones_dialog.open = True
@@ -676,27 +714,39 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
         tratamientos_dialog.open = True
         page.update()
 
-    def save_full_consultation(e):
+    def open_consulta_dialog():
         if not tratamiento_descripcion.value:
             show_alert("El campo de tratamiento es obligatorio")
             time.sleep(1)
             open_tratamientos_dialog()
             return
 
+        close_all_dialogs()
+        consulta_dialog.open = True
+        page.update()
+
+    def save_full_consultation(e):
+        if not consulta_nota.value:
+            show_alert("La nota de consulta es obligatorio")
+            time.sleep(1)
+            open_consulta_dialog()
+            return
+
         # Esta función se llamará al final para guardar todo
         try:
-            # 1. Guardar signos vitales
-            result_signos_vitales = guardar_signos_vitales(
-                {
-                    "id_paciente": new_consult_paciente_id.value,
-                    "presion": signos_presion.value,
-                    "frecuencia_cardiaca": signos_frec_cardiaca.value,
-                    "frecuencia_respiratoria": signos_frec_respi.value,
-                    "temperatura": signos_temp.value,
-                    "peso": signos_peso.value,
-                    "talla": signos_talla.value,
-                }
-            )
+            if signos_vitales_disponibles_hoy == False:
+                # 1. Guardar signos vitales
+                result_signos_vitales = guardar_signos_vitales(
+                    {
+                        "id_paciente": new_consult_paciente_id.value,
+                        "presion": signos_presion.value,
+                        "frecuencia_cardiaca": signos_frec_cardiaca.value,
+                        "frecuencia_respiratoria": signos_frec_respi.value,
+                        "temperatura": signos_temp.value,
+                        "peso": signos_peso.value,
+                        "talla": signos_talla.value,
+                    }
+                )
 
             # 2. Guardar diagnóstico
             result_diagnostico = guardar_diagnostico(
@@ -705,6 +755,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
                     "id_usuario": id_usuario,
                     "codigo_cie": diagnostico_cie.value,
                     "descripcion_cie": diagnostico_cie_descripcion.value,
+                    "definitivo": diagnostico_definitivo.value,
                 }
             )
 
@@ -731,7 +782,33 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
                 }
             )
 
-            show_alert("Consulta completa guardada exitosamente")
+            result_consulta = guardar_evolucion(
+                {
+                    "id_paciente": new_consult_paciente_id.value,
+                    "id_usuario": id_usuario,
+                    "nota": consulta_nota.value,
+                }
+            )
+
+            # Limpiar todos los valores
+            diagnostico_buscador.value = ""
+            diagnostico_cie.value = ""
+            diagnostico_cie_descripcion.value = ""
+            diagnostico_cie_id.value = ""
+            diagnostico_definitivo.value = ""
+
+            presc_medicamento.value = ""
+            presc_dosis.value = ""
+            presc_indicaciones.value = ""
+            presc_firmado_por.value = ""
+
+            tratamiento_descripcion.value = ""
+
+            consulta_nota.value = ""
+
+            show_alert(
+                f"{result_signos_vitales}\n{result_diagnostico}\n{result_prescripcion}\n{result_tratamiento}\n{result_consulta}"
+            )
             close_all_dialogs()
             refresh_pacientes()
 
@@ -744,15 +821,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
         diagnostico_dialog.open = False
         prescripciones_dialog.open = False
         tratamientos_dialog.open = False
-
-        # Limpiar todos los valores
-        # signos_presion.value = ""
-        # signos_frec_cardiaca.value = ""
-        # signos_frec_respi.value = ""
-        # signos_temp.value = ""
-        # signos_peso.value = ""
-        # signos_talla.value = ""
-
+        consulta_dialog.open = False
         page.update()
 
     def change_page(delta):
@@ -808,6 +877,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
         diagnostico_cie_id.value = str(cie["id"])  # Guarda el ID interno
         diagnostico_cie.value = cie["codigo"]
         diagnostico_cie_descripcion.value = cie["descripcion"]
+        diagnostico_definitivo.value = "Presuntivo"
         page.update()
 
     # UI
@@ -821,6 +891,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
         open_prescripciones_dialog,
         open_signos_dialog,
         open_tratamientos_dialog,
+        open_consulta_dialog,
         save_full_consultation,
         close_all_dialogs,
     )
@@ -844,9 +915,11 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
     signos_temp = ui["signos_temp"]
     signos_peso = ui["signos_peso"]
     signos_talla = ui["signos_talla"]
+    diagnostico_buscador = ui["diagnostico_buscador"]
     diagnostico_cie_id = ui["diagnostico_cie_id"]
     diagnostico_cie = ui["diagnostico_cie"]
     diagnostico_cie_descripcion = ui["diagnostico_cie_descripcion"]
+    diagnostico_definitivo = ui["diagnostico_definitivo"]
     cie_list = ui["cie_list"]
     diagnostico_dialog = ui["diagnostico_dialog"]
     presc_medicamento = ui["presc_medicamento"]
@@ -858,6 +931,8 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
     tratamiento_descripcion = ui["tratamiento_descripcion"]
     tratamiento_fecha = ui["tratamiento_fecha"]
     tratamientos_dialog = ui["tratamientos_dialog"]
+    consulta_nota = ui["consulta_nota"]
+    consulta_dialog = ui["consulta_dialog"]
 
     refresh_pacientes()
 
@@ -880,6 +955,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int):
             diagnostico_dialog,
             prescripciones_dialog,
             tratamientos_dialog,
+            consulta_dialog,
         ],
         expand=True,
         scroll=ft.ScrollMode.AUTO,

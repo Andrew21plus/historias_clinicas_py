@@ -3,8 +3,11 @@ from screens.pacientes.pacientes_screen import PacientesScreen
 from screens.historia_clinica.historia_clinica_screen import HistoriaClinicaScreen
 from screens.tamizaje.tamizaje_screen import TamizajeScreen
 from screens.evoluciones.evoluciones_screen import EvolucionesScreen
-from screens.certificados.certificados_screen import CertificadosScreen  # Nueva importación
+from screens.certificados.certificados_screen import (
+    CertificadosScreen,
+)  # Nueva importación
 from screens.reportes.reportes_screen import ReportesScreen  # Nueva importación
+
 
 def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to_login):
     """Pantalla del menú principal con opciones de navegación y cierre de sesión"""
@@ -18,7 +21,7 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to
         elif index == 2:
             content_area.content = TamizajeScreen(page, id_usuario)
         elif index == 3:
-            content_area.content = EvolucionesScreen(page, id_usuario)
+            content_area.content = EvolucionesScreen(page, id_usuario, nombre, apellido)
         elif index == 4:  # Nueva opción: Certificados
             content_area.content = CertificadosScreen(page, id_usuario)
         elif index == 5:  # Nueva opción: Reportes
@@ -34,7 +37,12 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to
         content=ft.Column(
             [
                 ft.Text(f"{nombre} {apellido}", weight=ft.FontWeight.BOLD, size=16),
-                ft.Text(f"ID Usuario: {id_usuario}", italic=True, size=14, color=ft.colors.BLUE),
+                ft.Text(
+                    f"ID Usuario: {id_usuario}",
+                    italic=True,
+                    size=14,
+                    color=ft.colors.BLUE,
+                ),
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             spacing=5,

@@ -11,6 +11,7 @@ def crear_evoluciones_ui(
     open_prescripciones_dialog,
     open_signos_dialog,
     open_tratamientos_dialog,
+    open_consulta_dialog,
     save_full_consultation,
     close_all_dialogs,
 ):
@@ -102,6 +103,13 @@ def crear_evoluciones_ui(
     diagnostico_cie = ft.TextField(label="Codigo cie", multiline=True)
     diagnostico_cie_descripcion = ft.TextField(label="Descripcion", visible=True)
     diagnostico_cie_id = ft.TextField(visible=False)
+    diagnostico_definitivo = ft.Dropdown(
+        label="Estado",
+        options=[
+            ft.dropdown.DropdownOption("Definitivo"),
+            ft.dropdown.DropdownOption("Presuntivo"),
+        ],
+    )
 
     cie_list = ft.ListView(expand=True, spacing=10)
 
@@ -118,7 +126,9 @@ def crear_evoluciones_ui(
                     border=ft.border.all(1, ft.colors.GREY_300),
                 ),
                 diagnostico_cie_id,
-                diagnostico_cie,
+                ft.Row(
+                    [diagnostico_cie, diagnostico_definitivo],
+                ),
                 diagnostico_cie_descripcion,
             ],
             spacing=10,
@@ -135,7 +145,7 @@ def crear_evoluciones_ui(
     presc_medicamento = ft.TextField(label="Medicamento*")
     presc_dosis = ft.TextField(label="Dosis*")
     presc_indicaciones = ft.TextField(label="Indicaciones", multiline=True)
-    presc_firmado_por = ft.TextField(label="Firmado por")
+    presc_firmado_por = ft.TextField(label="Firmado por", disabled=True)
 
     prescripciones_dialog = ft.AlertDialog(
         modal=True,
@@ -151,7 +161,12 @@ def crear_evoluciones_ui(
         ),
         actions=[
             ft.TextButton("Continuar", on_click=lambda e: open_tratamientos_dialog()),
-            ft.TextButton("Atrás", on_click=lambda e: open_diagnostico_dialog()),
+            ft.TextButton(
+                "Atrás",
+                on_click=lambda e, from_signos=False: open_diagnostico_dialog(
+                    from_signos
+                ),
+            ),
             ft.TextButton("Cancelar", on_click=close_all_dialogs),
         ],
     )
@@ -172,8 +187,26 @@ def crear_evoluciones_ui(
             width=900,
         ),
         actions=[
-            ft.TextButton("Guardar Todo", on_click=save_full_consultation),
+            ft.TextButton("Continuar", on_click=lambda e: open_consulta_dialog()),
             ft.TextButton("Atrás", on_click=lambda e: open_prescripciones_dialog()),
+            ft.TextButton("Cancelar", on_click=close_all_dialogs),
+        ],
+    )
+
+    # --- Diálogo 5: Nota Extra de Consulta ---
+    consulta_nota = ft.TextField(label="Nota", multiline=True, min_lines=5)
+
+    consulta_dialog = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("Notas de Consulta"),
+        content=ft.Column(
+            [consulta_nota],
+            spacing=10,
+            width=900,
+        ),
+        actions=[
+            ft.TextButton("Guardar Todo", on_click=lambda e: save_full_consultation(e)),
+            ft.TextButton("Atrás", on_click=lambda e: open_tratamientos_dialog()),
             ft.TextButton("Cancelar", on_click=close_all_dialogs),
         ],
     )
@@ -218,9 +251,11 @@ def crear_evoluciones_ui(
         "signos_temp": signos_temp,
         "signos_peso": signos_peso,
         "signos_talla": signos_talla,
+        "diagnostico_buscador": diagnostico_buscador,
         "diagnostico_cie_id": diagnostico_cie_id,
         "diagnostico_cie": diagnostico_cie,
         "diagnostico_cie_descripcion": diagnostico_cie_descripcion,
+        "diagnostico_definitivo": diagnostico_definitivo,
         "cie_list": cie_list,
         "diagnostico_dialog": diagnostico_dialog,
         "presc_medicamento": presc_medicamento,
@@ -232,4 +267,6 @@ def crear_evoluciones_ui(
         "tratamiento_descripcion": tratamiento_descripcion,
         "tratamiento_fecha": tratamiento_fecha,
         "tratamientos_dialog": tratamientos_dialog,
+        "consulta_nota": consulta_nota,
+        "consulta_dialog": consulta_dialog,
     }
