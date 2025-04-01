@@ -132,7 +132,7 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                             ft.Row(
                                 [
                                     ft.Text(
-                                        "� Presión arterial:",
+                                        "🩺 Presión arterial:",
                                         weight=ft.FontWeight.BOLD,
                                     ),
                                     ft.Text(signo.presion_arterial),
@@ -177,7 +177,7 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                             ),
                             ft.Row(
                                 [
-                                    ft.Text("� Talla:", weight=ft.FontWeight.BOLD),
+                                    ft.Text("📏 Talla:", weight=ft.FontWeight.BOLD),
                                     ft.Text(signo.talla),
                                 ],
                                 spacing=5,
@@ -227,7 +227,7 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
     # def confirm_delete_dialog_handler(paciente):
     #     """Abre el diálogo de confirmación para eliminar todos los antecedentes y signos vitales del paciente."""
     #     nonlocal selected_tamizaje
-    #     selected_tamizaje = paciente  # Guardar el paciente seleccionado
+    #     selected_tamizaje = paciente  # Guardar el paciente seleccionado 
     #     confirm_delete_dialog.open = True
     #     page.update()
 

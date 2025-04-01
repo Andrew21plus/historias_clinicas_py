@@ -1,5 +1,35 @@
 import flet as ft
+import re
+from datetime import datetime
 
+# Funciones de validación auxiliares para signos vitales
+def validar_presion_arterial(valor):
+    """Valida el formato de la presión arterial (ej: 120/80)."""
+    return re.match(r"^\d{2,3}\/\d{2,3}$", valor) is not None
+
+def validar_numero_entero(valor, min_val=None, max_val=None):
+    """Valida que el valor sea un número entero y esté dentro del rango opcional."""
+    try:
+        num = int(valor)
+        if min_val is not None and num < min_val:
+            return False
+        if max_val is not None and num > max_val:
+            return False
+        return True
+    except ValueError:
+        return False
+
+def validar_numero_decimal(valor, min_val=None, max_val=None):
+    """Valida que el valor sea un número decimal y esté dentro del rango opcional."""
+    try:
+        num = float(valor)
+        if min_val is not None and num < min_val:
+            return False
+        if max_val is not None and num > max_val:
+            return False
+        return True
+    except ValueError:
+        return False
 
 def crear_evoluciones_ui(
     page,
@@ -69,12 +99,124 @@ def crear_evoluciones_ui(
     )
 
     # --- Diálogo 1: Signos Vitales ---
-    signos_presion = ft.TextField(label="Presión Arterial")
-    signos_frec_cardiaca = ft.TextField(label="Frecuencia Cardíaca")
-    signos_frec_respi = ft.TextField(label="Frecuencia Respiratoria")
-    signos_temp = ft.TextField(label="Temperatura")
-    signos_peso = ft.TextField(label="Peso")
-    signos_talla = ft.TextField(label="Talla")
+    # Funciones de validación para signos vitales
+    def validar_signos():
+        valido = True
+        
+        # Validar presión arterial
+        if signos_presion.value and not validar_presion_arterial(signos_presion.value):
+            signos_presion.error_text = "Formato inválido (ej: 120/80)"
+            valido = False
+        else:
+            signos_presion.error_text = None
+        
+        # Validar frecuencia cardíaca
+        if signos_frec_cardiaca.value and not validar_numero_entero(signos_frec_cardiaca.value, 30, 200):
+            signos_frec_cardiaca.error_text = "Debe ser entre 30 y 200 lpm"
+            valido = False
+        else:
+            signos_frec_cardiaca.error_text = None
+        
+        # Validar frecuencia respiratoria
+        if signos_frec_respi.value and not validar_numero_entero(signos_frec_respi.value, 10, 60):
+            signos_frec_respi.error_text = "Debe ser entre 10 y 60 rpm"
+            valido = False
+        else:
+            signos_frec_respi.error_text = None
+        
+        # Validar temperatura
+        if signos_temp.value and not validar_numero_decimal(signos_temp.value, 35.0, 42.0):
+            signos_temp.error_text = "Debe ser entre 35.0 y 42.0 °C"
+            valido = False
+        else:
+            signos_temp.error_text = None
+        
+        # Validar peso
+        if signos_peso.value and not validar_numero_decimal(signos_peso.value, 0.5, 300):
+            signos_peso.error_text = "Debe ser entre 0.5 y 300 kg"
+            valido = False
+        else:
+            signos_peso.error_text = None
+        
+        # Validar talla
+        if signos_talla.value and not validar_numero_decimal(signos_talla.value, 30, 250):
+            signos_talla.error_text = "Debe ser entre 30 y 250 cm"
+            valido = False
+        else:
+            signos_talla.error_text = None
+        
+        page.update()
+        return valido
+
+    # Función wrapper para continuar con validación
+    def continuar_con_signos(e):
+        if validar_signos():
+            open_diagnostico_dialog()
+        else:
+            alert_dialog.content = ft.Text("Por favor corrija los errores en los signos vitales")
+            alert_dialog.open = True
+            page.update()
+
+    # Campos de signos vitales con validación en tiempo real
+    signos_presion = ft.TextField(
+        label="Presión Arterial (ej: 120/80)",
+        hint_text="Ej: 120/80",
+        on_change=lambda e: (
+            setattr(signos_presion, 'error_text', None) if validar_presion_arterial(signos_presion.value) or not signos_presion.value 
+            else setattr(signos_presion, 'error_text', "Formato inválido (ej: 120/80)"),
+            page.update()
+        )
+    )
+    
+    signos_frec_cardiaca = ft.TextField(
+        label="Frecuencia Cardíaca (lpm)",
+        hint_text="Ej: 72",
+        on_change=lambda e: (
+            setattr(signos_frec_cardiaca, 'error_text', None) if validar_numero_entero(signos_frec_cardiaca.value, 30, 200) or not signos_frec_cardiaca.value 
+            else setattr(signos_frec_cardiaca, 'error_text', "Debe ser entre 30 y 200"),
+            page.update()
+        )
+    )
+    
+    signos_frec_respi = ft.TextField(
+        label="Frecuencia Respiratoria (rpm)",
+        hint_text="Ej: 16",
+        on_change=lambda e: (
+            setattr(signos_frec_respi, 'error_text', None) if validar_numero_entero(signos_frec_respi.value, 10, 60) or not signos_frec_respi.value 
+            else setattr(signos_frec_respi, 'error_text', "Debe ser entre 10 y 60"),
+            page.update()
+        )
+    )
+    
+    signos_temp = ft.TextField(
+        label="Temperatura (°C)",
+        hint_text="Ej: 36.5",
+        on_change=lambda e: (
+            setattr(signos_temp, 'error_text', None) if validar_numero_decimal(signos_temp.value, 35.0, 42.0) or not signos_temp.value 
+            else setattr(signos_temp, 'error_text', "Debe ser entre 35.0 y 42.0"),
+            page.update()
+        )
+    )
+    
+    signos_peso = ft.TextField(
+        label="Peso (kg)",
+        hint_text="Ej: 68.5",
+        on_change=lambda e: (
+            setattr(signos_peso, 'error_text', None) if validar_numero_decimal(signos_peso.value, 0.5, 300) or not signos_peso.value 
+            else setattr(signos_peso, 'error_text', "Debe ser entre 0.5 y 300"),
+            page.update()
+        )
+    )
+    
+    signos_talla = ft.TextField(
+        label="Talla (cm)",
+        hint_text="Ej: 170",
+        on_change=lambda e: (
+            setattr(signos_talla, 'error_text', None) if validar_numero_decimal(signos_talla.value, 30, 250) or not signos_talla.value 
+            else setattr(signos_talla, 'error_text', "Debe ser entre 30 y 250"),
+            page.update()
+        )
+    )
 
     signos_dialog = ft.AlertDialog(
         modal=True,
@@ -90,7 +232,7 @@ def crear_evoluciones_ui(
             width=900,
         ),
         actions=[
-            ft.TextButton("Continuar", on_click=lambda e: open_diagnostico_dialog()),
+            ft.TextButton("Continuar", on_click=continuar_con_signos),
             ft.TextButton("Cancelar", on_click=close_all_dialogs),
         ],
     )
