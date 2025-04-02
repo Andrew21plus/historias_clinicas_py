@@ -221,27 +221,30 @@ def guardar_evolucion(evolucion):
     )
     return "Evolucion guardada"
 
-def guardar_nuevo_cie(codigo: str, descripcion: str) -> str:
+
+def guardar_nuevo_cie(codigo: str, descripcion: str) -> str:  # type: ignore
     """
     Guarda un nuevo código CIE en la base de datos local.
-    
+
     Args:
         codigo (str): Código CIE (ej: "E11.9").
         descripcion (str): Descripción del diagnóstico.
-    
+
     Returns:
         str: Mensaje de confirmación o error.
     """
     try:
         from services.cie_service import add_cie
-        
+
         # Validación básica
         if not codigo or not descripcion:
             return "❌ Código y descripción son obligatorios"
-        
+
         # Guardar usando la función existente en cie_service
         add_cie(codigo, descripcion)
-    
+
+        return f"✅ {codigo}"
+
     except Exception as e:
         print(f"[ERROR] Al guardar CIE: {str(e)}")
         return f"❌ Error al guardar: {str(e)}"

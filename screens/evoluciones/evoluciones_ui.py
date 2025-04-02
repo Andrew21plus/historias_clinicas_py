@@ -2,10 +2,12 @@ import flet as ft
 import re
 from datetime import datetime
 
+
 # Funciones de validación auxiliares para signos vitales
 def validar_presion_arterial(valor):
     """Valida el formato de la presión arterial (ej: 120/80)."""
     return re.match(r"^\d{2,3}\/\d{2,3}$", valor) is not None
+
 
 def validar_numero_entero(valor, min_val=None, max_val=None):
     """Valida que el valor sea un número entero y esté dentro del rango opcional."""
@@ -19,6 +21,7 @@ def validar_numero_entero(valor, min_val=None, max_val=None):
     except ValueError:
         return False
 
+
 def validar_numero_decimal(valor, min_val=None, max_val=None):
     """Valida que el valor sea un número decimal y esté dentro del rango opcional."""
     try:
@@ -30,6 +33,7 @@ def validar_numero_decimal(valor, min_val=None, max_val=None):
         return True
     except ValueError:
         return False
+
 
 def crear_evoluciones_ui(
     page,
@@ -44,6 +48,7 @@ def crear_evoluciones_ui(
     open_consulta_dialog,
     agregar_medicamento,
     cancelar_edicion,
+    agregar_diagnostico,
     save_full_consultation,
     close_all_dialogs,
 ):
@@ -102,49 +107,59 @@ def crear_evoluciones_ui(
     # Funciones de validación para signos vitales
     def validar_signos():
         valido = True
-        
+
         # Validar presión arterial
         if signos_presion.value and not validar_presion_arterial(signos_presion.value):
             signos_presion.error_text = "Formato inválido (ej: 120/80)"
             valido = False
         else:
             signos_presion.error_text = None
-        
+
         # Validar frecuencia cardíaca
-        if signos_frec_cardiaca.value and not validar_numero_entero(signos_frec_cardiaca.value, 30, 200):
+        if signos_frec_cardiaca.value and not validar_numero_entero(
+            signos_frec_cardiaca.value, 30, 200
+        ):
             signos_frec_cardiaca.error_text = "Debe ser entre 30 y 200 lpm"
             valido = False
         else:
             signos_frec_cardiaca.error_text = None
-        
+
         # Validar frecuencia respiratoria
-        if signos_frec_respi.value and not validar_numero_entero(signos_frec_respi.value, 10, 60):
+        if signos_frec_respi.value and not validar_numero_entero(
+            signos_frec_respi.value, 10, 60
+        ):
             signos_frec_respi.error_text = "Debe ser entre 10 y 60 rpm"
             valido = False
         else:
             signos_frec_respi.error_text = None
-        
+
         # Validar temperatura
-        if signos_temp.value and not validar_numero_decimal(signos_temp.value, 35.0, 42.0):
+        if signos_temp.value and not validar_numero_decimal(
+            signos_temp.value, 35.0, 42.0
+        ):
             signos_temp.error_text = "Debe ser entre 35.0 y 42.0 °C"
             valido = False
         else:
             signos_temp.error_text = None
-        
+
         # Validar peso
-        if signos_peso.value and not validar_numero_decimal(signos_peso.value, 0.5, 300):
+        if signos_peso.value and not validar_numero_decimal(
+            signos_peso.value, 0.5, 300
+        ):
             signos_peso.error_text = "Debe ser entre 0.5 y 300 kg"
             valido = False
         else:
             signos_peso.error_text = None
-        
+
         # Validar talla
-        if signos_talla.value and not validar_numero_decimal(signos_talla.value, 30, 250):
+        if signos_talla.value and not validar_numero_decimal(
+            signos_talla.value, 30, 250
+        ):
             signos_talla.error_text = "Debe ser entre 30 y 250 cm"
             valido = False
         else:
             signos_talla.error_text = None
-        
+
         page.update()
         return valido
 
@@ -153,7 +168,9 @@ def crear_evoluciones_ui(
         if validar_signos():
             open_diagnostico_dialog()
         else:
-            alert_dialog.content = ft.Text("Por favor corrija los errores en los signos vitales")
+            alert_dialog.content = ft.Text(
+                "Por favor corrija los errores en los signos vitales"
+            )
             alert_dialog.open = True
             page.update()
 
@@ -162,60 +179,88 @@ def crear_evoluciones_ui(
         label="Presión Arterial (ej: 120/80)",
         hint_text="Ej: 120/80",
         on_change=lambda e: (
-            setattr(signos_presion, 'error_text', None) if validar_presion_arterial(signos_presion.value) or not signos_presion.value 
-            else setattr(signos_presion, 'error_text', "Formato inválido (ej: 120/80)"),
-            page.update()
-        )
+            (
+                setattr(signos_presion, "error_text", None)
+                if validar_presion_arterial(signos_presion.value)
+                or not signos_presion.value
+                else setattr(
+                    signos_presion, "error_text", "Formato inválido (ej: 120/80)"
+                )
+            ),
+            page.update(),
+        ),
     )
-    
+
     signos_frec_cardiaca = ft.TextField(
         label="Frecuencia Cardíaca (lpm)",
         hint_text="Ej: 72",
         on_change=lambda e: (
-            setattr(signos_frec_cardiaca, 'error_text', None) if validar_numero_entero(signos_frec_cardiaca.value, 30, 200) or not signos_frec_cardiaca.value 
-            else setattr(signos_frec_cardiaca, 'error_text', "Debe ser entre 30 y 200"),
-            page.update()
-        )
+            (
+                setattr(signos_frec_cardiaca, "error_text", None)
+                if validar_numero_entero(signos_frec_cardiaca.value, 30, 200)
+                or not signos_frec_cardiaca.value
+                else setattr(
+                    signos_frec_cardiaca, "error_text", "Debe ser entre 30 y 200"
+                )
+            ),
+            page.update(),
+        ),
     )
-    
+
     signos_frec_respi = ft.TextField(
         label="Frecuencia Respiratoria (rpm)",
         hint_text="Ej: 16",
         on_change=lambda e: (
-            setattr(signos_frec_respi, 'error_text', None) if validar_numero_entero(signos_frec_respi.value, 10, 60) or not signos_frec_respi.value 
-            else setattr(signos_frec_respi, 'error_text', "Debe ser entre 10 y 60"),
-            page.update()
-        )
+            (
+                setattr(signos_frec_respi, "error_text", None)
+                if validar_numero_entero(signos_frec_respi.value, 10, 60)
+                or not signos_frec_respi.value
+                else setattr(signos_frec_respi, "error_text", "Debe ser entre 10 y 60")
+            ),
+            page.update(),
+        ),
     )
-    
+
     signos_temp = ft.TextField(
         label="Temperatura (°C)",
         hint_text="Ej: 36.5",
         on_change=lambda e: (
-            setattr(signos_temp, 'error_text', None) if validar_numero_decimal(signos_temp.value, 35.0, 42.0) or not signos_temp.value 
-            else setattr(signos_temp, 'error_text', "Debe ser entre 35.0 y 42.0"),
-            page.update()
-        )
+            (
+                setattr(signos_temp, "error_text", None)
+                if validar_numero_decimal(signos_temp.value, 35.0, 42.0)
+                or not signos_temp.value
+                else setattr(signos_temp, "error_text", "Debe ser entre 35.0 y 42.0")
+            ),
+            page.update(),
+        ),
     )
-    
+
     signos_peso = ft.TextField(
         label="Peso (kg)",
         hint_text="Ej: 68.5",
         on_change=lambda e: (
-            setattr(signos_peso, 'error_text', None) if validar_numero_decimal(signos_peso.value, 0.5, 300) or not signos_peso.value 
-            else setattr(signos_peso, 'error_text', "Debe ser entre 0.5 y 300"),
-            page.update()
-        )
+            (
+                setattr(signos_peso, "error_text", None)
+                if validar_numero_decimal(signos_peso.value, 0.5, 300)
+                or not signos_peso.value
+                else setattr(signos_peso, "error_text", "Debe ser entre 0.5 y 300")
+            ),
+            page.update(),
+        ),
     )
-    
+
     signos_talla = ft.TextField(
         label="Talla (cm)",
         hint_text="Ej: 170",
         on_change=lambda e: (
-            setattr(signos_talla, 'error_text', None) if validar_numero_decimal(signos_talla.value, 30, 250) or not signos_talla.value 
-            else setattr(signos_talla, 'error_text', "Debe ser entre 30 y 250"),
-            page.update()
-        )
+            (
+                setattr(signos_talla, "error_text", None)
+                if validar_numero_decimal(signos_talla.value, 30, 250)
+                or not signos_talla.value
+                else setattr(signos_talla, "error_text", "Debe ser entre 30 y 250")
+            ),
+            page.update(),
+        ),
     )
 
     signos_dialog = ft.AlertDialog(
@@ -264,7 +309,13 @@ def crear_evoluciones_ui(
         ],
     )
 
-    cie_list = ft.ListView(expand=True, spacing=10)
+    cie_list = ft.ListView(expand=True, spacing=10, height=200, auto_scroll=True)
+    diagnostico_lista = ft.ListView(
+        expand=True, spacing=10, height=200, auto_scroll=True
+    )
+    btn_agregar_diagnostico = ft.ElevatedButton(
+        "Agregar Diagnóstico", on_click=agregar_diagnostico
+    )
 
     diagnostico_dialog = ft.AlertDialog(
         modal=True,
@@ -272,18 +323,33 @@ def crear_evoluciones_ui(
         content=ft.Column(
             [
                 diagnostico_buscador,
-                ft.Container(
-                    content=cie_list,
-                    height=200,
-                    width=900,
-                    border=ft.border.all(1, ft.colors.GREY_300),
+                ft.Row(
+                    controls=[
+                        ft.Container(
+                            content=cie_list,
+                            height=200,
+                            width=450,
+                            border=ft.border.all(1, ft.colors.GREY_300),
+                            padding=5,
+                        ),
+                        ft.Container(
+                            content=diagnostico_lista,
+                            height=200,
+                            width=450,
+                            border=ft.border.all(1, ft.colors.GREY_300),
+                            padding=5,
+                        ),
+                    ],
+                    spacing=10,
                 ),
                 btn_buscar_externo,
                 diagnostico_cie_id,
                 ft.Row([diagnostico_cie, diagnostico_definitivo]),
                 diagnostico_cie_descripcion,
+                btn_agregar_diagnostico,
             ],
             spacing=10,
+            width=900,
         ),
         actions=[
             ft.TextButton("Continuar", on_click=lambda e: open_prescripciones_dialog()),
@@ -444,6 +510,7 @@ def crear_evoluciones_ui(
         "diagnostico_cie_descripcion": diagnostico_cie_descripcion,
         "diagnostico_definitivo": diagnostico_definitivo,
         "cie_list": cie_list,
+        "diagnostico_lista": diagnostico_lista,
         "diagnostico_dialog": diagnostico_dialog,
         "prescripciones_lista": prescripciones_lista,
         "presc_medicamento": presc_medicamento,
