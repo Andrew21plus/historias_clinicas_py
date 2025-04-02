@@ -881,7 +881,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         diagnostico_cie_id.value = ""
         diagnostico_definitivo.value = ""
         cie_list.value = ""
-        diagnostico_lista.value = ""
+        diagnostico_lista.controls.clear()
 
         # Limpiar prescripciones
         prescripciones_lista.controls.clear()
