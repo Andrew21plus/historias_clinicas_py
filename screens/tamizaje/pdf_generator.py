@@ -1,10 +1,10 @@
-# /screens/tamizaje/pdf_generator.py
 import matplotlib
 matplotlib.use('Agg')  # Configuración ANTES de importar pyplot
 import matplotlib.pyplot as plt
 from fpdf import FPDF
 from datetime import datetime
 import io
+from matplotlib.dates import DateFormatter
 
 def generar_pdf_signos_vitales(paciente, signos_vitales, output_path="output.pdf"):
     """
@@ -22,8 +22,8 @@ def generar_pdf_signos_vitales(paciente, signos_vitales, output_path="output.pdf
         # Ordenar signos vitales por fecha
         signos_ordenados = sorted(signos_vitales, key=lambda x: datetime.strptime(x.fecha, "%d-%m-%Y"))
         
-        # Crear PDF con orientación horizontal para mejor visualización
-        pdf = FPDF(orientation='L')  # 'L' para landscape (horizontal)
+        # Crear PDF con primera página vertical
+        pdf = FPDF(orientation='P')  # Primera página en portrait (vertical)
         pdf.add_page()
         pdf.set_font("Arial", size=10)
         
@@ -59,16 +59,22 @@ def generar_pdf_signos_vitales(paciente, signos_vitales, output_path="output.pdf
         
         # Gráficos de evolución
         fechas = [datetime.strptime(s.fecha, "%d-%m-%Y") for s in signos_ordenados]
+        fecha_str = [s.fecha for s in signos_ordenados]  # Para usar en las etiquetas
         
-        # Función auxiliar para crear gráficos
+        # Función auxiliar para crear gráficos con mejor formato de fechas
         def _agregar_grafico(fechas, valores, titulo, ylabel, color='b'):
             plt.figure(figsize=(10, 4))
             plt.plot(fechas, valores, marker='o', linestyle='-', color=color)
             plt.title(titulo, pad=20)
             plt.xlabel('Fecha', labelpad=10)
             plt.ylabel(ylabel, labelpad=10)
+            
+            # Formatear eje X para mostrar fechas correctamente
+            ax = plt.gca()
+            ax.xaxis.set_major_formatter(DateFormatter("%d-%m-%Y"))
+            plt.xticks(fechas, rotation=45, ha='right')
+            
             plt.grid(True, linestyle='--', alpha=0.7)
-            plt.xticks(rotation=45)
             plt.tight_layout()
             
             img_bytes = io.BytesIO()
@@ -87,8 +93,13 @@ def generar_pdf_signos_vitales(paciente, signos_vitales, output_path="output.pdf
             plt.title("Evolución de la Presión Arterial", pad=20)
             plt.xlabel('Fecha', labelpad=10)
             plt.ylabel('Presión (mmHg)', labelpad=10)
+            
+            # Formatear eje X
+            ax = plt.gca()
+            ax.xaxis.set_major_formatter(DateFormatter("%d-%m-%Y"))
+            plt.xticks(fechas, rotation=45, ha='right')
+            
             plt.grid(True, linestyle='--', alpha=0.7)
-            plt.xticks(rotation=45)
             plt.legend()
             plt.tight_layout()
             
@@ -96,6 +107,7 @@ def generar_pdf_signos_vitales(paciente, signos_vitales, output_path="output.pdf
             plt.savefig(img_bytes, format='png', dpi=100, bbox_inches='tight')
             plt.close()
             
+            # Agregar página horizontal para el gráfico
             pdf.add_page(orientation='L')
             pdf.set_font("Arial", 'B', 12)
             pdf.cell(0, 10, "Evolución de la Presión Arterial", ln=1)
@@ -134,6 +146,7 @@ def generar_pdf_signos_vitales(paciente, signos_vitales, output_path="output.pdf
         for valores, titulo, ylabel, color in graficos:
             try:
                 img_bytes = _agregar_grafico(fechas, valores, titulo, ylabel, color)
+                # Agregar página horizontal para cada gráfico
                 pdf.add_page(orientation='L')
                 pdf.set_font("Arial", 'B', 12)
                 pdf.cell(0, 10, titulo, ln=1)
