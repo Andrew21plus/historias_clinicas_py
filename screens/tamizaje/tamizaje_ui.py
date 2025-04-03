@@ -128,34 +128,58 @@ def crear_tamizaje_ui(page, save_edit, on_search, change_page):
     def validar_todo():
         valido = True
         
-        # Validar campos obligatorios
-        if not edit_tipo.value:
-            edit_tipo.error_text = "Seleccione un tipo de antecedente"
-            valido = False
-        else:
-            edit_tipo.error_text = None
-            
-        valido = validar_descripcion_campo(edit_descripcion) and valido
+        # Determinar si estamos editando antecedentes o signos vitales
+        es_antecedente = edit_tipo.visible if hasattr(edit_tipo, 'visible') else True
+        es_signo_vital = edit_fecha.visible if hasattr(edit_fecha, 'visible') else True
         
-        # Validar campos con formatos específicos
-        if edit_presion_arterial.value:
-            valido = validar_presion_arterial_campo(edit_presion_arterial) and valido
+        # Validar campos de antecedentes solo si son visibles
+        if es_antecedente:
+            if not edit_tipo.value:
+                edit_tipo.error_text = "Seleccione un tipo de antecedente"
+                valido = False
+            else:
+                edit_tipo.error_text = None
+                
+            valido = validar_descripcion_campo(edit_descripcion) and valido
         
-        if edit_frecuencia_cardiaca.value:
-            valido = validar_entero_campo(edit_frecuencia_cardiaca, 30, 200) and valido
-            
-        if edit_frecuencia_respiratoria.value:
-            valido = validar_entero_campo(edit_frecuencia_respiratoria, 10, 60) and valido
-            
-        if edit_temperatura.value:
-            valido = validar_decimal_campo(edit_temperatura, 35.0, 42.0) and valido
-            
-        if edit_peso.value:
-            valido = validar_decimal_campo(edit_peso, 0.5, 300) and valido
-            
-        if edit_talla.value:
-            valido = validar_decimal_campo(edit_talla, 30, 250) and valido
-            
+        # Validar campos de signos vitales solo si son visibles
+        if es_signo_vital:
+            if edit_presion_arterial.value:
+                valido = validar_presion_arterial_campo(edit_presion_arterial) and valido
+            else:
+                edit_presion_arterial.error_text = "Este campo es requerido"
+                valido = False
+                
+            if edit_frecuencia_cardiaca.value:
+                valido = validar_entero_campo(edit_frecuencia_cardiaca, 30, 200) and valido
+            else:
+                edit_frecuencia_cardiaca.error_text = "Este campo es requerido"
+                valido = False
+                
+            if edit_frecuencia_respiratoria.value:
+                valido = validar_entero_campo(edit_frecuencia_respiratoria, 10, 60) and valido
+            else:
+                edit_frecuencia_respiratoria.error_text = "Este campo es requerido"
+                valido = False
+                
+            if edit_temperatura.value:
+                valido = validar_decimal_campo(edit_temperatura, 35.0, 42.0) and valido
+            else:
+                edit_temperatura.error_text = "Este campo es requerido"
+                valido = False
+                
+            if edit_peso.value:
+                valido = validar_decimal_campo(edit_peso, 0.5, 300) and valido
+            else:
+                edit_peso.error_text = "Este campo es requerido"
+                valido = False
+                
+            if edit_talla.value:
+                valido = validar_decimal_campo(edit_talla, 30, 250) and valido
+            else:
+                edit_talla.error_text = "Este campo es requerido"
+                valido = False
+                
         return valido
 
     # Wrapper para save_edit que incluye validación (nuevo)

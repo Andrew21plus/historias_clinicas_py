@@ -12,7 +12,7 @@ from .tamizaje_ui import crear_tamizaje_ui
 from utils.formulario_tamizaje import crear_formulario_tamizaje
 from services.paciente_service import get_pacientes_by_id_usuario
 from services.historia_clinica_service import paciente_tiene_historia
-
+from datetime import datetime
 
 def TamizajeScreen(page: ft.Page, id_usuario: int):
     selected_tamizaje = None  # Variable para almacenar el tamizaje seleccionado
@@ -26,6 +26,29 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
         alert_dialog.content = ft.Text(message)
         alert_dialog.open = True
         page.update()
+
+    def generar_y_mostrar_pdf(paciente, signos_vitales):
+        try:
+            from .pdf_generator import generar_pdf_signos_vitales
+            import os
+            import webbrowser
+            
+            # Generar nombre de archivo único
+            filename = f"signos_vitales_{paciente.id_paciente}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            filepath = os.path.join("temp_pdfs", filename)
+            
+            # Crear directorio si no existe
+            os.makedirs("temp_pdfs", exist_ok=True)
+            
+            # Generar PDF
+            generar_pdf_signos_vitales(paciente, signos_vitales, filepath)
+            
+            # Abrir el PDF
+            webbrowser.open(filepath)
+            
+            show_alert(f"PDF generado exitosamente: {filename}")
+        except Exception as e:
+            show_alert(f"Error al generar PDF: {str(e)}")
 
     def validar_campos_requeridos(campos):
         campos_faltantes = [campo for campo in campos if not campo.value]
@@ -116,91 +139,93 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
                 )
                 contenido.controls.append(antecedentes_expansion)
 
-            # Sección de signos vitales
+            # Sección de signos vitales - Mostrar en tabla
             if signos_vitales:
-                signos_content = ft.Column(spacing=5)
-                for signo in signos_vitales:
-                    signos_content.controls.extend(
-                        [
-                            ft.Row(
-                                [
-                                    ft.Text("📅 Fecha:", weight=ft.FontWeight.BOLD),
-                                    ft.Text(signo.fecha),
-                                ],
-                                spacing=5,
-                            ),
-                            ft.Row(
-                                [
-                                    ft.Text(
-                                        "🩺 Presión arterial:",
-                                        weight=ft.FontWeight.BOLD,
-                                    ),
-                                    ft.Text(signo.presion_arterial),
-                                ],
-                                spacing=5,
-                            ),
-                            ft.Row(
-                                [
-                                    ft.Text(
-                                        "❤️ Frecuencia cardíaca:",
-                                        weight=ft.FontWeight.BOLD,
-                                    ),
-                                    ft.Text(signo.frecuencia_cardiaca),
-                                ],
-                                spacing=5,
-                            ),
-                            ft.Row(
-                                [
-                                    ft.Text(
-                                        "🌬️ Frecuencia respiratoria:",
-                                        weight=ft.FontWeight.BOLD,
-                                    ),
-                                    ft.Text(signo.frecuencia_respiratoria),
-                                ],
-                                spacing=5,
-                            ),
-                            ft.Row(
-                                [
-                                    ft.Text(
-                                        " 🌡️ Temperatura:", weight=ft.FontWeight.BOLD
-                                    ),
-                                    ft.Text(signo.temperatura),
-                                ],
-                                spacing=5,
-                            ),
-                            ft.Row(
-                                [
-                                    ft.Text("⚖️ Peso:", weight=ft.FontWeight.BOLD),
-                                    ft.Text(signo.peso),
-                                ],
-                                spacing=5,
-                            ),
-                            ft.Row(
-                                [
-                                    ft.Text("📏 Talla:", weight=ft.FontWeight.BOLD),
-                                    ft.Text(signo.talla),
-                                ],
-                                spacing=5,
-                            ),
-                            ft.Row(
-                                [
-                                    ft.IconButton(
-                                        ft.icons.EDIT,
-                                        icon_color=ft.colors.BLUE,
-                                        tooltip="Editar signos vitales",
-                                        on_click=lambda e, t=signo: open_edit_dialog(t),
-                                    ),
-                                ],
-                                alignment=ft.MainAxisAlignment.END,
-                            ),
-                            ft.Divider(height=10, color=ft.colors.GREY_300),
-                        ]
-                    )
+                # Crear tabla de signos vitales
+                signos_table = ft.DataTable(
+                    columns=[
+                        ft.DataColumn(ft.Text("📅 Fecha", weight=ft.FontWeight.BOLD)),
+                        ft.DataColumn(ft.Text("🩺 Presión arterial", weight=ft.FontWeight.BOLD)),
+                        ft.DataColumn(ft.Text("❤️ Frecuencia cardíaca", weight=ft.FontWeight.BOLD)),
+                        ft.DataColumn(ft.Text("🌬️ Frecuencia respiratoria", weight=ft.FontWeight.BOLD)),
+                        ft.DataColumn(ft.Text("🌡️ Temperatura", weight=ft.FontWeight.BOLD)),
+                        ft.DataColumn(ft.Text("⚖️ Peso", weight=ft.FontWeight.BOLD)),
+                        ft.DataColumn(ft.Text("📏 Talla", weight=ft.FontWeight.BOLD)),
+                        ft.DataColumn(ft.Text("Acciones", weight=ft.FontWeight.BOLD)),
+                    ],
+                    rows=[
+                        ft.DataRow(
+                            cells=[
+                                ft.DataCell(ft.Text(signo.fecha)),
+                                ft.DataCell(ft.Text(signo.presion_arterial)),
+                                ft.DataCell(ft.Text(signo.frecuencia_cardiaca)),
+                                ft.DataCell(ft.Text(signo.frecuencia_respiratoria)),
+                                ft.DataCell(ft.Text(signo.temperatura)),
+                                ft.DataCell(ft.Text(signo.peso)),
+                                ft.DataCell(ft.Text(signo.talla)),
+                                ft.DataCell(
+                                    ft.Row([
+                                        ft.IconButton(
+                                            ft.icons.EDIT,
+                                            icon_color=ft.colors.BLUE,
+                                            tooltip="Editar",
+                                            on_click=lambda e, s=signo: open_edit_dialog(s),
+                                        ),
+                                    ])
+                                ),
+                            ]
+                        ) for signo in signos_vitales
+                    ],
+                    border=ft.border.all(1, ft.colors.GREY_300),
+                    border_radius=10,
+                    horizontal_margin=10,
+                    heading_row_color=ft.colors.GREY_200,
+                    heading_row_height=40,
+                    data_row_min_height=40,
+                    data_row_max_height=60,
+                    column_spacing=10,
+                    width=min(page.window_width * 0.9, 1200),  # 90% del ancho o máximo 1200px
+                )
+
+            # Botón para generar PDF
+                pdf_button = ft.ElevatedButton(
+                    "Generar PDF de Evolución",
+                    icon=ft.icons.PICTURE_AS_PDF,
+                    on_click=lambda e: generar_y_mostrar_pdf(paciente, signos_vitales),
+                )
 
                 # ExpansionTile para los signos vitales
                 signos_expansion = ft.ExpansionTile(
                     title=ft.Text("🩺 Signos Vitales", weight=ft.FontWeight.BOLD),
-                    controls=[signos_content],
+                    controls=[
+                        ft.Container(
+                            content=ft.Column([
+                                ft.Text("Historial de Signos Vitales", size=16, weight=ft.FontWeight.BOLD),
+                                ft.Divider(height=10),
+                                ft.ListTile(
+                                    title=ft.Text("Resumen de Signos Vitales"),
+                                    subtitle=ft.Text(f"Total de registros: {len(signos_vitales)}"),
+                                ),
+                                ft.Container(
+                                    content=ft.Column(
+                                        [signos_table],
+                                        scroll=ft.ScrollMode.AUTO,
+                                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                    ),
+                                    padding=10,
+                                    border=ft.border.all(1, ft.colors.GREY_300),
+                                    border_radius=10,
+                                    margin=ft.margin.symmetric(vertical=10),
+                                    alignment=ft.alignment.center,
+                                ),
+                                ft.Row(
+                                    [pdf_button],
+                                    alignment=ft.MainAxisAlignment.CENTER
+                                ),
+                            ]),
+                            padding=10,
+                        )
+                    ],
                 )
                 contenido.controls.append(signos_expansion)
 
@@ -282,17 +307,28 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
     def open_edit_dialog(tamizaje):
         """Abre el diálogo de edición para un tamizaje."""
         nonlocal selected_tamizaje
-        selected_tamizaje = tamizaje  # Guardar el tamizaje seleccionado
+        selected_tamizaje = tamizaje
 
-        if hasattr(tamizaje, "tipo"):  # Si es un antecedente médico
+        edit_id.visible = False
+        # Ocultar/mostrar campos según el tipo
+        if hasattr(tamizaje, "tipo"):  # Antecedente médico
             edit_id.value = tamizaje.id_antecedente
             edit_tipo.value = tamizaje.tipo
             edit_descripcion.value = tamizaje.descripcion
-            edit_dialog.content.controls = [
-                edit_tipo,
-                edit_descripcion,
-            ]  # Mostrar solo campos de antecedentes
-        else:  # Si es un signo vital
+            edit_dialog.title = ft.Text("Editar Antecedente Médico")
+            
+            # Mostrar solo campos de antecedentes
+            edit_tipo.visible = True
+            edit_descripcion.visible = True
+            edit_fecha.visible = False
+            edit_presion_arterial.visible = False
+            edit_frecuencia_cardiaca.visible = False
+            edit_frecuencia_respiratoria.visible = False
+            edit_temperatura.visible = False
+            edit_peso.visible = False
+            edit_talla.visible = False
+            
+        else:  # Signo vital
             edit_id.value = tamizaje.id_signo
             edit_fecha.value = tamizaje.fecha
             edit_presion_arterial.value = tamizaje.presion_arterial
@@ -301,15 +337,18 @@ def TamizajeScreen(page: ft.Page, id_usuario: int):
             edit_temperatura.value = tamizaje.temperatura
             edit_peso.value = tamizaje.peso
             edit_talla.value = tamizaje.talla
-            edit_dialog.content.controls = [  # Mostrar solo campos de signos vitales
-                edit_fecha,
-                edit_presion_arterial,
-                edit_frecuencia_cardiaca,
-                edit_frecuencia_respiratoria,
-                edit_temperatura,
-                edit_peso,
-                edit_talla,
-            ]
+            edit_dialog.title = ft.Text("Editar Signos Vitales")
+            
+            # Mostrar solo campos de signos vitales
+            edit_tipo.visible = False
+            edit_descripcion.visible = False
+            edit_fecha.visible = True
+            edit_presion_arterial.visible = True
+            edit_frecuencia_cardiaca.visible = True
+            edit_frecuencia_respiratoria.visible = True
+            edit_temperatura.visible = True
+            edit_peso.visible = True
+            edit_talla.visible = True
 
         edit_dialog.open = True
         page.update()
