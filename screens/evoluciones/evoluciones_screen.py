@@ -462,10 +462,17 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         )
 
     def refresh_pacientes():
+        #print(f"🌀 Refrescando pacientes con query: '{search_query}'")
         nonlocal all_historias
         pacientes_list.controls.clear()
-        all_historias = obtener_historias_clinicas(id_usuario, search_query)
+        #print("📤 Antes de agregar, controles visibles:", len(pacientes_list.controls))
 
+        all_historias = obtener_historias_clinicas(id_usuario, search_query)
+        unique_historias = {}
+        for h in all_historias:
+            if h.id_paciente not in unique_historias:
+                unique_historias[h.id_paciente] = h
+        all_historias = list(unique_historias.values())
         start_index = current_page * pacientes_per_page
         end_index = start_index + pacientes_per_page
 

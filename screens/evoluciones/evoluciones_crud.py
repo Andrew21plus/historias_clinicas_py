@@ -23,7 +23,7 @@ from services.cie_service import get_cie, add_cie
 
 
 def obtener_historias_clinicas(id_usuario, search_query=""):
-    """Obtiene historias clínicas solo de pacientes con tamizaje completo, evitando duplicados"""
+    """Obtiene historias clínicas de pacientes con antecedentes médicos, sin duplicados."""
 
     def normalize_string(s):
         if not s:
@@ -35,57 +35,39 @@ def obtener_historias_clinicas(id_usuario, search_query=""):
             .lower()
         )
 
-    # Obtener todas las historias clínicas
     historias = get_historias_clinicas_by_usuario(id_usuario)
 
-    # Diccionario para evitar duplicados por paciente
+    # Filtrar solo pacientes con antecedentes, evitando duplicados por paciente
     historias_unicas = {}
-
-    for historia in historias:
-        # Verificar si ya tenemos una historia para este paciente
-        if historia.id_paciente in historias_unicas:
+    for h in historias:
+        if h.id_paciente in historias_unicas:
             continue
+        antecedentes = get_antecedentes_medicos_by_paciente(h.id_paciente, id_usuario)
+        if antecedentes:
+            historias_unicas[h.id_paciente] = h
 
-        # Verificar requisitos (antecedentes y signos vitales)
-        antecedentes = get_antecedentes_medicos_by_paciente(
-            historia.id_paciente, id_usuario
-        )
-        signos_vitales = get_signos_vitales_by_paciente(
-            historia.id_paciente, id_usuario
-        )
-
-        if antecedentes and signos_vitales:
-            historias_unicas[historia.id_paciente] = historia
-
-    # Convertir a lista
     historias_filtradas = list(historias_unicas.values())
 
-    # Aplicar búsqueda si existe
+    # Filtro por búsqueda si aplica
     if search_query:
         normalized_query = normalize_string(search_query)
-        resultados_busqueda = []
-        pacientes_vistos = set()
-
+        resultados_busqueda = {}
         for h in historias_filtradas:
             paciente = get_paciente(h.id_paciente)
             if not paciente:
                 continue
 
-            # Verificar si ya procesamos este paciente
-            if paciente.id_paciente in pacientes_vistos:
-                continue
-            pacientes_vistos.add(paciente.id_paciente)
-
-            # Buscar en nombre y apellido
-            if (normalized_query in normalize_string(paciente.nombre)) or (
-                normalized_query in normalize_string(paciente.apellido)
+            if (
+                normalized_query in normalize_string(paciente.nombre)
+                or normalized_query in normalize_string(paciente.apellido)
             ):
-                resultados_busqueda.append(h)
+                # Solo la primera historia por paciente
+                if h.id_paciente not in resultados_busqueda:
+                    resultados_busqueda[h.id_paciente] = h
 
-        historias_filtradas = resultados_busqueda
+        historias_filtradas = list(resultados_busqueda.values())
 
     return historias_filtradas
-
 
 def actualizar_historia_clinica(
     id_historia, motivo_consulta, enfermedad_actual, id_usuario
