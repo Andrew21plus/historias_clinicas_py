@@ -58,3 +58,14 @@ def get_evoluciones_by_paciente_and_fecha(id_paciente, fecha):
     evoluciones = [Evolucion(*row) for row in rows]
     conn.close()
     return evoluciones
+
+def get_evoluciones_by_usuario(id_usuario):
+    conn = get_connection()  # Obtener la conexión a la base de datos
+    c = conn.cursor()
+    # Consulta para obtener todas las historias clínicas asociadas a un usuario específico
+    c.execute("SELECT * FROM Evoluciones WHERE id_usuario = ?", (id_usuario,))
+    rows = c.fetchall()
+    # Convertir las filas en objetos HistoriaClinica
+    evoluciones = [Evolucion(*row) for row in rows]
+    conn.close()
+    return evoluciones
