@@ -18,16 +18,31 @@ def parse_fecha(fecha_str):
         except:
             return None
 
-def obtener_diagnosticos_frecuentes(id_usuario, periodo=None, limite=10):
-    """Obtiene diagnósticos más frecuentes con formato de fecha corregido"""
+def obtener_diagnosticos_frecuentes(id_usuario, periodo=None, fecha_inicio=None, fecha_fin=None, limite=10):
+    """Obtiene diagnósticos más frecuentes con filtros de fecha"""
     diagnosticos = get_diagnosticos()
     
     conteo_cie = defaultdict(int)
     for d in diagnosticos:
         if d.id_usuario == id_usuario:
             fecha = parse_fecha(getattr(d, 'fecha', None))
-            if fecha and (periodo is None or fecha.strftime('%Y-%m') == periodo):
-                conteo_cie[d.cie] += 1
+            if fecha:
+                # Verificar si cumple con los filtros de fecha
+                fecha_valida = True
+                
+                # Filtrar por periodo si está especificado (mantenemos compatibilidad)
+                if periodo and fecha.strftime('%Y-%m') != periodo:
+                    fecha_valida = False
+                
+                # Filtrar por rango de fechas si está especificado
+                if fecha_inicio and fecha.date() < fecha_inicio:
+                    fecha_valida = False
+                
+                if fecha_fin and fecha.date() > fecha_fin:
+                    fecha_valida = False
+                
+                if fecha_valida:
+                    conteo_cie[d.cie] += 1
     
     resultados = sorted(conteo_cie.items(), key=lambda x: x[1], reverse=True)[:limite]
     return [(codigo, obtener_descripcion_cie(codigo), count) for codigo, count in resultados]

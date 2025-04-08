@@ -16,10 +16,12 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
     # Crear componentes de UI
     ui = crear_reportes_ui(page, id_usuario)
     cie_dict = ui["cie_dict"]
-    
+
     # Obtener referencias a los componentes
     diagnosticos_frecuentes_chart = ui["diagnosticos_frecuentes_chart"]
-    diagnosticos_frecuentes_dropdown = ui["diagnosticos_frecuentes_dropdown"]
+    selector_fechas = ui["selector_fechas"]
+    fecha_inicio_picker = ui["fecha_inicio_picker"]
+    fecha_fin_picker = ui["fecha_fin_picker"]
     distribucion_sexo_chart = ui["distribucion_sexo_chart"]
     tendencias_temporales_chart = ui["tendencias_temporales_chart"]
     tendencias_cie_dropdown = ui["tendencias_cie_dropdown"]
@@ -28,55 +30,93 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
     prescripciones_chart = ui["prescripciones_chart"]
 
     def cargar_diagnosticos_frecuentes(e=None):
-        """Carga diagnósticos frecuentes"""
-        periodo = diagnosticos_frecuentes_dropdown.value if diagnosticos_frecuentes_dropdown.value != "all" else None
-        datos = obtener_diagnosticos_frecuentes(id_usuario, periodo=periodo)
+        """Carga diagnósticos frecuentes con el rango de fechas seleccionado"""
+        fecha_inicio = ui["fecha_inicio_picker"].value
+        fecha_fin = ui["fecha_fin_picker"].value
         
-        colors = [
-            ft.colors.BLUE_400,
-            ft.colors.INDIGO_400,
-            ft.colors.TEAL_400,
-            ft.colors.CYAN_400,
-            ft.colors.LIGHT_BLUE_400
-        ]
+        # Convertir a date si son datetime
+        if fecha_inicio and hasattr(fecha_inicio, 'date'):
+            fecha_inicio = fecha_inicio.date()
+        if fecha_fin and hasattr(fecha_fin, 'date'):
+            fecha_fin = fecha_fin.date()
         
-        diagnosticos_frecuentes_chart.bar_groups = [
-            ft.BarChartGroup(
-                x=i,
-                bar_rods=[
-                    ft.BarChartRod(
-                        from_y=0,
-                        to_y=item[2],
-                        width=25,
-                        color=colors[i % len(colors)],
-                        tooltip=f"Código: {item[0]}\n"
-                               f"Descripción: {cie_dict.get(item[0], 'No disponible')}\n"
-                               f"Frecuencia: {item[2]}\n"
-                               f"Período: {periodo if periodo else 'Todos'}",
-                        border_radius=4,
-                    )
-                ],
+        try:
+            datos = obtener_diagnosticos_frecuentes(
+                id_usuario, 
+                fecha_inicio=fecha_inicio,
+                fecha_fin=fecha_fin
             )
-            for i, item in enumerate(datos[:10])
-        ]
-        
-        diagnosticos_frecuentes_chart.bottom_axis.labels = [
-            ft.ChartAxisLabel(
-                value=i,
-                label=ft.Container(
-                    content=ft.Text(
-                        f"{item[0]}\n({item[2]})", 
-                        size=10, 
-                        color=ft.colors.BLACK,
-                        text_align=ft.TextAlign.CENTER
+            
+            colors = [
+                ft.colors.BLUE_400,
+                ft.colors.INDIGO_400,
+                ft.colors.TEAL_400,
+                ft.colors.CYAN_400,
+                ft.colors.LIGHT_BLUE_400
+            ]
+            
+            # Texto del período para mostrar en el gráfico
+            texto_periodo = ft.Text(
+                f"Período: {fecha_inicio.strftime('%d/%m/%Y') if fecha_inicio else 'Todos'} - "
+                f"{fecha_fin.strftime('%d/%m/%Y') if fecha_fin else 'Todos'}",
+                size=12,
+                weight=ft.FontWeight.BOLD,
+                color=ft.colors.BLUE_GREY_700
+            )
+            
+            # Configurar el gráfico
+            diagnosticos_frecuentes_chart.bar_groups = [
+                ft.BarChartGroup(
+                    x=i,
+                    bar_rods=[
+                        ft.BarChartRod(
+                            from_y=0,
+                            to_y=item[2],
+                            width=25,
+                            color=colors[i % len(colors)],
+                            tooltip=cie_dict.get(item[0], 'No disponible'),  # Solo la descripción
+                            border_radius=4,
+                        )
+                    ],
+                )
+                for i, item in enumerate(datos[:10])
+            ]
+            
+            diagnosticos_frecuentes_chart.bottom_axis.labels = [
+                ft.ChartAxisLabel(
+                    value=i,
+                    label=ft.Container(
+                        content=ft.Text(
+                            f"{item[0]}\n({item[2]})", 
+                            size=10, 
+                            color=ft.colors.BLACK,
+                            text_align=ft.TextAlign.CENTER
+                        ),
+                        width=80,
                     ),
-                    width=80,
-                ),
+                )
+                for i, item in enumerate(datos[:10])
+            ]
+            
+            # Crear un contenedor que combine el gráfico y el texto del período
+            chart_container = ft.Column(
+                [
+                    ft.Row([texto_periodo], alignment=ft.MainAxisAlignment.CENTER),
+                    ft.Container(diagnosticos_frecuentes_chart, height=300),
+                ],
+                spacing=0
             )
-            for i, item in enumerate(datos[:10])
-        ]
-        
-        page.update()
+            
+            # Reemplazar el contenido del contenedor del gráfico
+            if hasattr(page, 'diagnosticos_chart_container'):
+                page.diagnosticos_chart_container.content = chart_container
+            else:
+                page.diagnosticos_chart_container = ft.Container(content=chart_container)
+            
+            page.update()
+
+        except Exception as e:
+            print(f"Error al cargar diagnósticos: {e}")
 
     def cargar_distribucion_sexo(e=None):
         """Distribución por sexo con etiquetas externas"""
@@ -156,16 +196,14 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
                         width=20,
                         color=ft.colors.GREEN_400 if variaciones[i] >= 0 else ft.colors.RED_400,
                         tooltip=f"Período: {item[0]}\n"
-                               f"Diagnóstico: {descripcion}\n"
-                               f"Casos: {item[1]}\n"
-                               f"Variación: {'+' if variaciones[i] >=0 else ''}{variaciones[i]:.1f}%",
+                            f"Casos: {item[1]}\n"
+                            f"Variación: {'+' if variaciones[i] >=0 else ''}{variaciones[i]:.1f}%",
                         border_radius=4,
                     )
                 ],
             )
             for i, item in enumerate(datos[-12:])
         ]
-        
         tendencias_temporales_chart.bottom_axis.labels = [
             ft.ChartAxisLabel(
                 value=i,
@@ -203,15 +241,14 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
                         width=25,
                         color=color,
                         tooltip=f"Período: {item[0]}\n"
-                               f"Pacientes únicos: {item[1]}",
+                            f"Pacientes: {item[1]}",  # Aquí añadimos la cantidad
                         border_radius=4,
                     )
                 ],
             )
             for i, item in enumerate(datos[-12:])
         ]
-        
-        # Configurar etiquetas del eje X
+        # Resto del método permanece igual...
         actividad_chart.bottom_axis.labels = [
             ft.ChartAxisLabel(
                 value=i,
@@ -271,7 +308,8 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
         page.update()
 
     # Configurar eventos
-    diagnosticos_frecuentes_dropdown.on_change = cargar_diagnosticos_frecuentes
+    fecha_inicio_picker.on_change = cargar_diagnosticos_frecuentes
+    fecha_fin_picker.on_change = cargar_diagnosticos_frecuentes
     tendencias_cie_dropdown.on_change = cargar_tendencias_temporales
     actividad_periodo_dropdown.on_change = cargar_pacientes_diagnosticados
     
@@ -292,7 +330,7 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
                 content=ft.Column(
                     [
                         ft.Text("Diagnósticos más frecuentes", size=18, weight=ft.FontWeight.BOLD),
-                        ft.Row([diagnosticos_frecuentes_dropdown], alignment=ft.MainAxisAlignment.END),
+                        selector_fechas,  # Usamos el selector de fechas en lugar del dropdown
                         ft.Container(diagnosticos_frecuentes_chart, height=300),
                         
                         ft.Divider(),

@@ -1,4 +1,5 @@
 import flet as ft
+from datetime import datetime, timedelta
 from services.cie_service import get_cie
 from .reportes_crud import obtener_periodos_disponibles, obtener_cie_disponibles
 
@@ -31,13 +32,59 @@ def crear_reportes_ui(page, id_usuario):
         **tooltip_config
     )
     
-    diagnosticos_frecuentes_dropdown = ft.Dropdown(
-        label="Período",
-        options=[ft.dropdown.Option("all", "Todos los períodos")] + [
-            ft.dropdown.Option(p, p) for p in periodos_disponibles
+    # Selector de rango de fechas para diagnósticos frecuentes
+    fecha_inicio_picker = ft.DatePicker(
+        first_date=datetime.now() - timedelta(days=365*2),
+        last_date=datetime.now(),
+    )
+    
+    fecha_fin_picker = ft.DatePicker(
+        first_date=datetime.now() - timedelta(days=365*2),
+        last_date=datetime.now(),
+    )
+    
+    # Añadir los datepickers al overlay de la página
+    page.overlay.extend([fecha_inicio_picker, fecha_fin_picker])
+    
+    # Texto que muestra el rango seleccionado
+    rango_fechas_texto = ft.Text("Todos los períodos", size=12, weight=ft.FontWeight.BOLD)
+    
+    def actualizar_rango_fechas():
+        if fecha_inicio_picker.value and fecha_fin_picker.value:
+            rango_fechas_texto.value = f"{fecha_inicio_picker.value.strftime('%d/%m/%Y')} - {fecha_fin_picker.value.strftime('%d/%m/%Y')}"
+        else:
+            rango_fechas_texto.value = "Todos los períodos"
+        page.update()
+    
+    def abrir_selector_inicio(e):
+        fecha_inicio_picker.open = True
+        page.update()
+    
+    def abrir_selector_fin(e):
+        fecha_fin_picker.open = True
+        page.update()
+    
+    # Configurar eventos de cambio
+    fecha_inicio_picker.on_change = actualizar_rango_fechas
+    fecha_fin_picker.on_change = actualizar_rango_fechas
+    
+    # Controles de selección de fechas
+    selector_fechas = ft.Row(
+        [
+            ft.ElevatedButton(
+                "Fecha Inicio",
+                icon=ft.icons.CALENDAR_MONTH,
+                on_click=abrir_selector_inicio,
+            ),
+            ft.ElevatedButton(
+                "Fecha Fin",
+                icon=ft.icons.CALENDAR_MONTH,
+                on_click=abrir_selector_fin,
+            ),
+            rango_fechas_texto
         ],
-        value="all",
-        width=200,
+        spacing=10,
+        alignment=ft.MainAxisAlignment.START
     )
     
     # Componentes para reporte de distribución por sexo
@@ -125,12 +172,15 @@ def crear_reportes_ui(page, id_usuario):
     
     return {
         "diagnosticos_frecuentes_chart": diagnosticos_frecuentes_chart,
-        "diagnosticos_frecuentes_dropdown": diagnosticos_frecuentes_dropdown,
+        "selector_fechas": selector_fechas,
+        "fecha_inicio_picker": fecha_inicio_picker,
+        "fecha_fin_picker": fecha_fin_picker,
         "distribucion_sexo_chart": distribucion_sexo_chart,
         "tendencias_temporales_chart": tendencias_temporales_chart,
         "tendencias_cie_dropdown": tendencias_cie_dropdown,
         "actividad_periodo_dropdown": actividad_periodo_dropdown,
         "actividad_chart": actividad_chart,
         "prescripciones_chart": prescripciones_chart,
-        "cie_dict": cie_dict
+        "cie_dict": cie_dict,
+        "rango_fechas_texto": rango_fechas_texto
     }
