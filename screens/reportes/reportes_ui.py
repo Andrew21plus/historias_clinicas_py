@@ -46,16 +46,6 @@ def crear_reportes_ui(page, id_usuario):
     # Añadir los datepickers al overlay de la página
     page.overlay.extend([fecha_inicio_picker, fecha_fin_picker])
     
-    # Texto que muestra el rango seleccionado
-    rango_fechas_texto = ft.Text("Todos los períodos", size=12, weight=ft.FontWeight.BOLD)
-    
-    def actualizar_rango_fechas():
-        if fecha_inicio_picker.value and fecha_fin_picker.value:
-            rango_fechas_texto.value = f"{fecha_inicio_picker.value.strftime('%d/%m/%Y')} - {fecha_fin_picker.value.strftime('%d/%m/%Y')}"
-        else:
-            rango_fechas_texto.value = "Todos los períodos"
-        page.update()
-    
     def abrir_selector_inicio(e):
         fecha_inicio_picker.open = True
         page.update()
@@ -64,11 +54,7 @@ def crear_reportes_ui(page, id_usuario):
         fecha_fin_picker.open = True
         page.update()
     
-    # Configurar eventos de cambio
-    fecha_inicio_picker.on_change = actualizar_rango_fechas
-    fecha_fin_picker.on_change = actualizar_rango_fechas
-    
-    # Controles de selección de fechas
+    # Controles de selección de fechas (simplificado sin texto de rango)
     selector_fechas = ft.Row(
         [
             ft.ElevatedButton(
@@ -80,8 +66,7 @@ def crear_reportes_ui(page, id_usuario):
                 "Fecha Fin",
                 icon=ft.icons.CALENDAR_MONTH,
                 on_click=abrir_selector_fin,
-            ),
-            rango_fechas_texto
+            )
         ],
         spacing=10,
         alignment=ft.MainAxisAlignment.START
@@ -182,5 +167,4 @@ def crear_reportes_ui(page, id_usuario):
         "actividad_chart": actividad_chart,
         "prescripciones_chart": prescripciones_chart,
         "cie_dict": cie_dict,
-        "rango_fechas_texto": rango_fechas_texto
     }

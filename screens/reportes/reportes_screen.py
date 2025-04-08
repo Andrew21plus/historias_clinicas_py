@@ -31,8 +31,8 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
 
     def cargar_diagnosticos_frecuentes(e=None):
         """Carga diagnósticos frecuentes con el rango de fechas seleccionado"""
-        fecha_inicio = ui["fecha_inicio_picker"].value
-        fecha_fin = ui["fecha_fin_picker"].value
+        fecha_inicio = fecha_inicio_picker.value
+        fecha_fin = fecha_fin_picker.value
         
         # Convertir a date si son datetime
         if fecha_inicio and hasattr(fecha_inicio, 'date'):
@@ -56,9 +56,14 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
             ]
             
             # Texto del período para mostrar en el gráfico
+            periodo_texto = "Todos los períodos"
+            if fecha_inicio or fecha_fin:
+                inicio = fecha_inicio.strftime('%d/%m/%Y') if fecha_inicio else 'Todos'
+                fin = fecha_fin.strftime('%d/%m/%Y') if fecha_fin else 'Todos'
+                periodo_texto = f"Período: {inicio} - {fin}"
+            
             texto_periodo = ft.Text(
-                f"Período: {fecha_inicio.strftime('%d/%m/%Y') if fecha_inicio else 'Todos'} - "
-                f"{fecha_fin.strftime('%d/%m/%Y') if fecha_fin else 'Todos'}",
+                periodo_texto,
                 size=12,
                 weight=ft.FontWeight.BOLD,
                 color=ft.colors.BLUE_GREY_700
@@ -108,10 +113,10 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
             )
             
             # Reemplazar el contenido del contenedor del gráfico
-            if hasattr(page, 'diagnosticos_chart_container'):
-                page.diagnosticos_chart_container.content = chart_container
-            else:
+            if not hasattr(page, 'diagnosticos_chart_container'):
                 page.diagnosticos_chart_container = ft.Container(content=chart_container)
+            else:
+                page.diagnosticos_chart_container.content = chart_container
             
             page.update()
 
@@ -330,8 +335,10 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
                 content=ft.Column(
                     [
                         ft.Text("Diagnósticos más frecuentes", size=18, weight=ft.FontWeight.BOLD),
-                        selector_fechas,  # Usamos el selector de fechas en lugar del dropdown
-                        ft.Container(diagnosticos_frecuentes_chart, height=300),
+                        selector_fechas,
+                        # Usamos el contenedor combinado en lugar del gráfico directamente
+                        page.diagnosticos_chart_container if hasattr(page, 'diagnosticos_chart_container') 
+                            else ft.Container(ft.Text("Cargando..."), height=300),
                         
                         ft.Divider(),
                         
