@@ -5,8 +5,6 @@ from .reportes_crud import (
     obtener_tendencias_temporales,
     obtener_pacientes_diagnosticados_por_periodo,
     obtener_prescripciones_frecuentes,
-    obtener_periodos_disponibles,
-    obtener_cie_disponibles
 )
 from .reportes_ui import crear_reportes_ui
 
@@ -25,8 +23,10 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
     distribucion_sexo_chart = ui["distribucion_sexo_chart"]
     tendencias_temporales_chart = ui["tendencias_temporales_chart"]
     tendencias_cie_dropdown = ui["tendencias_cie_dropdown"]
-    actividad_periodo_dropdown = ui["actividad_periodo_dropdown"]
     actividad_chart = ui["actividad_chart"]
+    actividad_selector_fechas = ui["actividad_selector_fechas"]
+    actividad_fecha_inicio_picker = ui["actividad_fecha_inicio_picker"]
+    actividad_fecha_fin_picker = ui["actividad_fecha_fin_picker"]
     prescripciones_chart = ui["prescripciones_chart"]
 
     def cargar_diagnosticos_frecuentes(e=None):
@@ -79,7 +79,7 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
                             to_y=item[2],
                             width=25,
                             color=colors[i % len(colors)],
-                            tooltip=cie_dict.get(item[0], 'No disponible'),  # Solo la descripción
+                            tooltip=f"{cie_dict.get(item[0], 'No disponible')}\nTotal casos: {item[2]}",  # Descripción + "Total casos:"
                             border_radius=4,
                         )
                     ],
@@ -200,7 +200,7 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
                         to_y=item[1],
                         width=20,
                         color=ft.colors.GREEN_400 if variaciones[i] >= 0 else ft.colors.RED_400,
-                        tooltip=f"Período: {item[0]}\n"
+                        tooltip=f"Mes: {item[0]}\n"
                             f"Casos: {item[1]}\n"
                             f"Variación: {'+' if variaciones[i] >=0 else ''}{variaciones[i]:.1f}%",
                         border_radius=4,
@@ -224,53 +224,106 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
         page.update()
 
     def cargar_pacientes_diagnosticados(e=None):
-        """Pacientes diagnosticados por período corregido"""
-        periodo = actividad_periodo_dropdown.value
-        datos = obtener_pacientes_diagnosticados_por_periodo(id_usuario, periodo)
+        """Pacientes diagnosticados por mes con filtro de fechas"""
+        fecha_inicio = actividad_fecha_inicio_picker.value
+        fecha_fin = actividad_fecha_fin_picker.value
         
-        if not datos:
-            actividad_chart.content = ft.Text("No hay datos disponibles", size=16)
-            page.update()
-            return
+        # Convertir a date si son datetime
+        if fecha_inicio and hasattr(fecha_inicio, 'date'):
+            fecha_inicio = fecha_inicio.date()
+        if fecha_fin and hasattr(fecha_fin, 'date'):
+            fecha_fin = fecha_fin.date()
+        
+        try:
+            datos = obtener_pacientes_diagnosticados_por_periodo(
+                id_usuario, 
+                fecha_inicio=fecha_inicio,
+                fecha_fin=fecha_fin
+            )
             
-        # Configurar colores
-        color = ft.colors.BLUE_400
-        
-        actividad_chart.bar_groups = [
-            ft.BarChartGroup(
-                x=i,
-                bar_rods=[
-                    ft.BarChartRod(
-                        from_y=0,
-                        to_y=item[1],
-                        width=25,
-                        color=color,
-                        tooltip=f"Período: {item[0]}\n"
-                            f"Pacientes: {item[1]}",  # Aquí añadimos la cantidad
-                        border_radius=4,
-                    )
-                ],
+            if not datos:
+                # Crear contenedor con mensaje de no datos
+                no_data_container = ft.Column([
+                    ft.Text("No hay datos disponibles", size=16),
+                    ft.Text("Período seleccionado: Todos los períodos", size=12, color=ft.colors.BLUE_GREY_700)
+                ], alignment=ft.MainAxisAlignment.CENTER)
+                
+                actividad_chart.content = no_data_container
+                page.update()
+                return
+                
+            # Texto del período para mostrar en el gráfico (igual que en diagnósticos frecuentes)
+            periodo_texto = "Todos los períodos"
+            if fecha_inicio or fecha_fin:
+                inicio = fecha_inicio.strftime('%d/%m/%Y') if fecha_inicio else 'Todos'
+                fin = fecha_fin.strftime('%d/%m/%Y') if fecha_fin else 'Todos'
+                periodo_texto = f"Período: {inicio} - {fin}"
+            
+            texto_periodo = ft.Text(
+                periodo_texto,
+                size=12,
+                weight=ft.FontWeight.BOLD,
+                color=ft.colors.BLUE_GREY_700
             )
-            for i, item in enumerate(datos[-12:])
-        ]
-        # Resto del método permanece igual...
-        actividad_chart.bottom_axis.labels = [
-            ft.ChartAxisLabel(
-                value=i,
-                label=ft.Container(
-                    content=ft.Text(
-                        item[0].split('-')[1] if periodo == 'month' else item[0][-2:],
-                        size=10,
-                        color=ft.colors.BLACK
+            
+            # Configurar el gráfico
+            actividad_chart.bar_groups = [
+                ft.BarChartGroup(
+                    x=i,
+                    bar_rods=[
+                        ft.BarChartRod(
+                            from_y=0,
+                            to_y=item[1],
+                            width=25,
+                            color=ft.colors.BLUE_400,
+                            tooltip=f"Mes: {item[0]}\nPacientes: {item[1]}",
+                            border_radius=4,
+                        )
+                    ],
+                )
+                for i, item in enumerate(datos[-12:])
+            ]
+            
+            actividad_chart.bottom_axis.labels = [
+                ft.ChartAxisLabel(
+                    value=i,
+                    label=ft.Container(
+                        content=ft.Text(
+                            item[0].split('-')[1],  # Mostrar solo el mes (MM)
+                            size=10,
+                            color=ft.colors.BLACK
+                        ),
+                        width=60,
+                        alignment=ft.alignment.center,
                     ),
-                    width=60,
-                    alignment=ft.alignment.center,
-                ),
+                )
+                for i, item in enumerate(datos[-12:])
+            ]
+            
+            # Crear contenedor combinado IDÉNTICO al de diagnósticos frecuentes
+            chart_container = ft.Column(
+                [
+                    ft.Row([texto_periodo], alignment=ft.MainAxisAlignment.CENTER),
+                    ft.Container(actividad_chart, height=300),
+                ],
+                spacing=0
             )
-            for i, item in enumerate(datos[-12:])
-        ]
-        
-        page.update()
+            
+            # Usar el mismo patrón que en diagnósticos frecuentes
+            if not hasattr(page, 'actividad_chart_container'):
+                page.actividad_chart_container = ft.Container(content=chart_container)
+            else:
+                page.actividad_chart_container.content = chart_container
+            
+            page.update()
+
+        except Exception as e:
+            error_container = ft.Column([
+                ft.Text("Error al cargar datos", size=16, color=ft.colors.RED),
+                ft.Text(f"Detalle: {str(e)}", size=12)
+            ])
+            actividad_chart.content = error_container
+            page.update()
 
     def cargar_prescripciones(e=None):
         """Prescripciones frecuentes"""
@@ -316,7 +369,8 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
     fecha_inicio_picker.on_change = cargar_diagnosticos_frecuentes
     fecha_fin_picker.on_change = cargar_diagnosticos_frecuentes
     tendencias_cie_dropdown.on_change = cargar_tendencias_temporales
-    actividad_periodo_dropdown.on_change = cargar_pacientes_diagnosticados
+    actividad_fecha_inicio_picker.on_change = cargar_pacientes_diagnosticados
+    actividad_fecha_fin_picker.on_change = cargar_pacientes_diagnosticados
     
     # Cargar datos iniciales
     cargar_diagnosticos_frecuentes()
@@ -336,7 +390,6 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
                     [
                         ft.Text("Diagnósticos más frecuentes", size=18, weight=ft.FontWeight.BOLD),
                         selector_fechas,
-                        # Usamos el contenedor combinado en lugar del gráfico directamente
                         page.diagnosticos_chart_container if hasattr(page, 'diagnosticos_chart_container') 
                             else ft.Container(ft.Text("Cargando..."), height=300),
                         
@@ -361,9 +414,10 @@ def ReportesScreen(page: ft.Page, id_usuario: int):
                 text="Actividad Clínica",
                 content=ft.Column(
                     [
-                        ft.Text("Pacientes diagnosticados por período", size=18, weight=ft.FontWeight.BOLD),
-                        ft.Row([actividad_periodo_dropdown], alignment=ft.MainAxisAlignment.END),
-                        ft.Container(actividad_chart, height=300),
+                        ft.Text("Pacientes diagnosticados por mes", size=18, weight=ft.FontWeight.BOLD),
+                        actividad_selector_fechas,
+                        page.actividad_chart_container if hasattr(page, 'actividad_chart_container') 
+                            else ft.Container(ft.Text("Cargando..."), height=300),
                         
                         ft.Divider(),
                         

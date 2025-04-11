@@ -21,7 +21,7 @@ def crear_reportes_ui(page, id_usuario):
         'tooltip_margin': 10
     }
 
-    # Componentes para reporte de diagnósticos frecuentes
+    # ========== Componentes para Diagnósticos Frecuentes ==========
     diagnosticos_frecuentes_chart = ft.BarChart(
         bar_groups=[],
         border=ft.border.all(1, ft.colors.GREY_400),
@@ -32,7 +32,6 @@ def crear_reportes_ui(page, id_usuario):
         **tooltip_config
     )
     
-    # Selector de rango de fechas para diagnósticos frecuentes
     fecha_inicio_picker = ft.DatePicker(
         first_date=datetime.now() - timedelta(days=365*2),
         last_date=datetime.now(),
@@ -43,7 +42,6 @@ def crear_reportes_ui(page, id_usuario):
         last_date=datetime.now(),
     )
     
-    # Añadir los datepickers al overlay de la página
     page.overlay.extend([fecha_inicio_picker, fecha_fin_picker])
     
     def abrir_selector_inicio(e):
@@ -54,7 +52,6 @@ def crear_reportes_ui(page, id_usuario):
         fecha_fin_picker.open = True
         page.update()
     
-    # Controles de selección de fechas (simplificado sin texto de rango)
     selector_fechas = ft.Row(
         [
             ft.ElevatedButton(
@@ -72,7 +69,7 @@ def crear_reportes_ui(page, id_usuario):
         alignment=ft.MainAxisAlignment.START
     )
     
-    # Componentes para reporte de distribución por sexo
+    # ========== Componentes para Distribución por Sexo ==========
     distribucion_sexo_chart = ft.PieChart(
         sections=[],
         sections_space=0,
@@ -80,7 +77,7 @@ def crear_reportes_ui(page, id_usuario):
         expand=True,
     )
     
-    # Componentes para reporte de tendencias temporales
+    # ========== Componentes para Tendencias Temporales ==========
     tendencias_temporales_chart = ft.BarChart(
         bar_groups=[],
         border=ft.border.all(1, ft.colors.GREY_400),
@@ -100,7 +97,6 @@ def crear_reportes_ui(page, id_usuario):
         **tooltip_config
     )
     
-    # Dropdown de CIE
     tendencias_cie_dropdown = ft.Dropdown(
         label="Diagnóstico (CIE)",
         options=[ft.dropdown.Option("", "Todos los diagnósticos")] + [
@@ -113,18 +109,7 @@ def crear_reportes_ui(page, id_usuario):
         width=350,
     )
     
-    # Componentes para reporte de pacientes diagnosticados
-    actividad_periodo_dropdown = ft.Dropdown(
-        label="Agrupación temporal",
-        options=[
-            ft.dropdown.Option("day", "Día"),
-            ft.dropdown.Option("week", "Semana"),
-            ft.dropdown.Option("month", "Mes"),
-        ],
-        value="month",
-        width=150,
-    )
-    
+    # ========== Componentes para Pacientes Diagnosticados ==========
     actividad_chart = ft.BarChart(
         bar_groups=[],
         border=ft.border.all(1, ft.colors.GREY_400),
@@ -144,7 +129,45 @@ def crear_reportes_ui(page, id_usuario):
         **tooltip_config
     )
     
-    # Componentes para reporte de prescripciones
+    # Selectores de fecha para Pacientes Diagnosticados
+    actividad_fecha_inicio_picker = ft.DatePicker(
+        first_date=datetime.now() - timedelta(days=365*2),
+        last_date=datetime.now(),
+    )
+    
+    actividad_fecha_fin_picker = ft.DatePicker(
+        first_date=datetime.now() - timedelta(days=365*2),
+        last_date=datetime.now(),
+    )
+    
+    page.overlay.extend([actividad_fecha_inicio_picker, actividad_fecha_fin_picker])
+    
+    def abrir_selector_actividad_inicio(e):
+        actividad_fecha_inicio_picker.open = True
+        page.update()
+    
+    def abrir_selector_actividad_fin(e):
+        actividad_fecha_fin_picker.open = True
+        page.update()
+    
+    actividad_selector_fechas = ft.Row(
+        [
+            ft.ElevatedButton(
+                "Fecha Inicio",
+                icon=ft.icons.CALENDAR_MONTH,
+                on_click=abrir_selector_actividad_inicio,
+            ),
+            ft.ElevatedButton(
+                "Fecha Fin",
+                icon=ft.icons.CALENDAR_MONTH,
+                on_click=abrir_selector_actividad_fin,
+            )
+        ],
+        spacing=10,
+        alignment=ft.MainAxisAlignment.START
+    )
+    
+    # ========== Componentes para Prescripciones Frecuentes ==========
     prescripciones_chart = ft.BarChart(
         bar_groups=[],
         border=ft.border.all(1, ft.colors.GREY_400),
@@ -156,15 +179,28 @@ def crear_reportes_ui(page, id_usuario):
     )
     
     return {
+        # Diagnósticos frecuentes
         "diagnosticos_frecuentes_chart": diagnosticos_frecuentes_chart,
         "selector_fechas": selector_fechas,
         "fecha_inicio_picker": fecha_inicio_picker,
         "fecha_fin_picker": fecha_fin_picker,
+        
+        # Distribución por sexo
         "distribucion_sexo_chart": distribucion_sexo_chart,
+        
+        # Tendencias temporales
         "tendencias_temporales_chart": tendencias_temporales_chart,
         "tendencias_cie_dropdown": tendencias_cie_dropdown,
-        "actividad_periodo_dropdown": actividad_periodo_dropdown,
+        
+        # Pacientes diagnosticados (actividad clínica)
         "actividad_chart": actividad_chart,
+        "actividad_selector_fechas": actividad_selector_fechas,
+        "actividad_fecha_inicio_picker": actividad_fecha_inicio_picker,
+        "actividad_fecha_fin_picker": actividad_fecha_fin_picker,
+        
+        # Prescripciones frecuentes
         "prescripciones_chart": prescripciones_chart,
+        
+        # Diccionario CIE
         "cie_dict": cie_dict,
     }

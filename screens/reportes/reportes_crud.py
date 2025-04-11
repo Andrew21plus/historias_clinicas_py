@@ -18,7 +18,7 @@ def parse_fecha(fecha_str):
         except:
             return None
 
-def obtener_diagnosticos_frecuentes(id_usuario, periodo=None, fecha_inicio=None, fecha_fin=None, limite=10):
+def obtener_diagnosticos_frecuentes(id_usuario, fecha_inicio=None, fecha_fin=None, limite=10):
     """Obtiene diagnósticos más frecuentes con filtros de fecha"""
     diagnosticos = get_diagnosticos()
     
@@ -27,22 +27,16 @@ def obtener_diagnosticos_frecuentes(id_usuario, periodo=None, fecha_inicio=None,
         if d.id_usuario == id_usuario:
             fecha = parse_fecha(getattr(d, 'fecha', None))
             if fecha:
-                # Verificar si cumple con los filtros de fecha
-                fecha_valida = True
+                # Convertir a date si es datetime
+                fecha_date = fecha.date() if hasattr(fecha, 'date') else fecha
                 
-                # Filtrar por periodo si está especificado (mantenemos compatibilidad)
-                if periodo and fecha.strftime('%Y-%m') != periodo:
-                    fecha_valida = False
+                # Aplicar filtros de fecha
+                if fecha_inicio and fecha_date < fecha_inicio:
+                    continue
+                if fecha_fin and fecha_date > fecha_fin:
+                    continue
                 
-                # Filtrar por rango de fechas si está especificado
-                if fecha_inicio and fecha.date() < fecha_inicio:
-                    fecha_valida = False
-                
-                if fecha_fin and fecha.date() > fecha_fin:
-                    fecha_valida = False
-                
-                if fecha_valida:
-                    conteo_cie[d.cie] += 1
+                conteo_cie[d.cie] += 1
     
     resultados = sorted(conteo_cie.items(), key=lambda x: x[1], reverse=True)[:limite]
     return [(codigo, obtener_descripcion_cie(codigo), count) for codigo, count in resultados]
@@ -93,22 +87,34 @@ def obtener_tendencias_temporales(id_usuario, codigo_cie=None):
     
     return datos, variaciones
 
-def obtener_pacientes_diagnosticados_por_periodo(id_usuario, periodo='month'):
-    """Obtiene cantidad de pacientes únicos diagnosticados por período"""
+def obtener_pacientes_diagnosticados_por_periodo(id_usuario, fecha_inicio=None, fecha_fin=None):
+    """
+    Obtiene cantidad de pacientes únicos diagnosticados por mes
+    con filtros de fecha inicio y fin
+    """
     pacientes = {p.id_paciente: p for p in get_pacientes_by_id_usuario(id_usuario)}
     diagnosticos = get_diagnosticos()
     
-    pacientes_por_periodo = defaultdict(set)
+    pacientes_por_mes = defaultdict(set)
     
     for d in diagnosticos:
         if d.id_usuario == id_usuario and d.id_paciente in pacientes:
             fecha = parse_fecha(getattr(d, 'fecha', None))
             if fecha:
-                key = format_periodo(fecha, periodo)
-                pacientes_por_periodo[key].add(d.id_paciente)
+                # Convertir a date si es datetime
+                fecha_date = fecha.date() if hasattr(fecha, 'date') else fecha
+                
+                # Aplicar filtros de fecha
+                if fecha_inicio and fecha_date < fecha_inicio:
+                    continue
+                if fecha_fin and fecha_date > fecha_fin:
+                    continue
+                
+                mes = fecha.strftime('%Y-%m')
+                pacientes_por_mes[mes].add(d.id_paciente)
     
-    resultados = [(periodo, len(pacientes)) for periodo, pacientes in pacientes_por_periodo.items()]
-    return completar_periodos_faltantes(sorted(resultados), periodo)
+    resultados = [(mes, len(pacientes)) for mes, pacientes in pacientes_por_mes.items()]
+    return completar_meses_faltantes(sorted(resultados))
 
 def obtener_prescripciones_frecuentes(id_usuario, limite=12):
     """Prescripciones frecuentes sin dependencia de fechas"""
@@ -134,76 +140,36 @@ def obtener_cie_disponibles(id_usuario):
     diagnosticos = get_diagnosticos()
     return sorted({d.cie for d in diagnosticos if d.id_usuario == id_usuario and d.cie})
 
-# Funciones auxiliares
-def format_periodo(fecha, periodo):
-    if periodo == 'month':
-        return fecha.strftime('%Y-%m')
-    elif periodo == 'week':
-        return fecha.strftime('%Y-%W')
-    else:  # day
-        return fecha.strftime('%Y-%m-%d')
-
-def completar_periodos_faltantes(datos, periodo):
-    if not datos:
-        return datos
-    
-    try:
-        if periodo == 'month':
-            dates = [datetime.strptime(d[0], '%Y-%m') for d in datos]
-            min_date, max_date = min(dates), max(dates)
-            current = min_date
-            while current <= max_date:
-                key = current.strftime('%Y-%m')
-                if not any(d[0] == key for d in datos):
-                    datos.append((key, 0))
-                if current.month == 12:
-                    current = current.replace(year=current.year+1, month=1)
-                else:
-                    current = current.replace(month=current.month+1)
-        
-        elif periodo == 'week':
-            dates = [datetime.strptime(d[0]+'-1', '%Y-%W-%w') for d in datos]
-            min_date, max_date = min(dates), max(dates)
-            current = min_date
-            while current <= max_date:
-                key = current.strftime('%Y-%W')
-                if not any(d[0] == key for d in datos):
-                    datos.append((key, 0))
-                current += timedelta(weeks=1)
-        
-        else:  # day
-            dates = [datetime.strptime(d[0], '%Y-%m-%d') for d in datos]
-            min_date, max_date = min(dates), max(dates)
-            current = min_date
-            while current <= max_date:
-                key = current.strftime('%Y-%m-%d')
-                if not any(d[0] == key for d in datos):
-                    datos.append((key, 0))
-                current += timedelta(days=1)
-        
-        return sorted(datos, key=lambda x: x[0])
-    
-    except ValueError:
-        return datos
-
+# ========== Funciones auxiliares ==========
 def completar_meses_faltantes(datos):
+    """Completa los meses faltantes entre el primer y último mes con datos"""
     if not datos:
         return datos
     
     try:
-        dates = [datetime.strptime(d[0], '%Y-%m') for d in datos]
-        min_date, max_date = min(dates), max(dates)
+        # Extraer rango de fechas
+        fechas = [datetime.strptime(d[0], '%Y-%m') for d in datos]
+        min_date = min(fechas)
+        max_date = max(fechas)
+        
+        # Generar todos los meses en el rango
         current = min_date
+        meses_en_rango = set()
         while current <= max_date:
-            key = current.strftime('%Y-%m')
-            if not any(d[0] == key for d in datos):
-                datos.append((key, 0))
+            meses_en_rango.add(current.strftime('%Y-%m'))
             if current.month == 12:
                 current = current.replace(year=current.year+1, month=1)
             else:
                 current = current.replace(month=current.month+1)
         
-        return sorted(datos, key=lambda x: x[0])
+        # Añadir meses faltantes con valor 0
+        datos_dict = {mes: valor for mes, valor in datos}
+        resultados_completos = [
+            (mes, datos_dict.get(mes, 0))
+            for mes in sorted(meses_en_rango)
+        ]
+        
+        return resultados_completos
     
     except ValueError:
         return datos
