@@ -5,6 +5,7 @@ from dao.signo_vital_dao import (
     delete_signo_vital as delete_signo_vital_dao,
     get_signos_vitales_by_paciente as get_signos_vitales_by_paciente_dao,
     get_signosvitales_hoy_dao as get_signosvitales_hoy_dao,
+    get_signosvitales_by_fecha_dao as get_signosvitales_by_fecha_dao,
 )
 
 
@@ -79,3 +80,7 @@ def get_signos_vitales_by_paciente(id_paciente, id_usuario):
 
 def get_signos_vitales_hoy(id_paciente, id_usuario, fecha):
     return get_signosvitales_hoy_dao(id_paciente, id_usuario, fecha)
+
+
+def get_signos_vitales_by_fecha(id_paciente, id_usuario, fecha):
+    return get_signosvitales_by_fecha_dao(id_paciente, id_usuario, fecha)

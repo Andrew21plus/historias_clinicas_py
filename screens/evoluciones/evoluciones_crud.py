@@ -10,15 +10,32 @@ from services.antecedente_medico_service import get_antecedentes_medicos_by_paci
 from services.signo_vital_service import (
     get_signos_vitales_by_paciente,
     get_signos_vitales_hoy,
+    get_signos_vitales_by_fecha,
     add_signo_vital,
+    update_signo_vital,
 )
-from services.diagnostico_service import get_diagnosticos_by_consulta, add_diagnostico
+from services.diagnostico_service import (
+    get_diagnosticos_by_consulta,
+    add_diagnostico,
+    update_diagnostico,
+    delete_diagnostico,
+)
 from services.prescripcion_service import (
     get_prescripciones_by_consulta,
     add_prescripcion,
+    update_prescripcion,
+    delete_prescripcion,
 )
-from services.tratamiento_service import get_tratamientos_by_consulta, add_tratamiento
-from services.evolucion_service import get_evoluciones_by_consulta, add_evolucion
+from services.tratamiento_service import (
+    get_tratamientos_by_consulta,
+    add_tratamiento,
+    update_tratamiento,
+)
+from services.evolucion_service import (
+    get_evoluciones_by_consulta,
+    add_evolucion,
+    update_evolucion,
+)
 from services.cie_service import get_cie, add_cie
 
 
@@ -57,10 +74,9 @@ def obtener_historias_clinicas(id_usuario, search_query=""):
             if not paciente:
                 continue
 
-            if (
-                normalized_query in normalize_string(paciente.nombre)
-                or normalized_query in normalize_string(paciente.apellido)
-            ):
+            if normalized_query in normalize_string(
+                paciente.nombre
+            ) or normalized_query in normalize_string(paciente.apellido):
                 # Solo la primera historia por paciente
                 if h.id_paciente not in resultados_busqueda:
                     resultados_busqueda[h.id_paciente] = h
@@ -68,6 +84,7 @@ def obtener_historias_clinicas(id_usuario, search_query=""):
         historias_filtradas = list(resultados_busqueda.values())
 
     return historias_filtradas
+
 
 def actualizar_historia_clinica(
     id_historia, motivo_consulta, enfermedad_actual, id_usuario
@@ -115,6 +132,10 @@ def obtener_signos_hoy(id_paciente, id_usuario):
     )
 
 
+def obtener_signos_por_fecha(id_paciente, id_usuario, fecha):
+    return get_signos_vitales_by_fecha(id_paciente, id_usuario, fecha)
+
+
 def obtener_cie(search_query=""):
     """Obtiene códigos CIE con filtro opcional"""
     try:
@@ -136,7 +157,11 @@ def guardar_signos_vitales(signos_vitales):
     print(f"[evoluciones_crud] signos_vitales: {signos_vitales}")
     add_signo_vital(
         signos_vitales["id_paciente"],
-        datetime.datetime.now().strftime("%d-%m-%Y"),
+        (
+            signos_vitales["fecha"]
+            if "fecha" in signos_vitales and signos_vitales["fecha"]
+            else datetime.datetime.now().strftime("%d-%m-%Y")
+        ),
         signos_vitales["presion"],
         signos_vitales["frecuencia_cardiaca"],
         signos_vitales["frecuencia_respiratoria"],
@@ -155,7 +180,11 @@ def guardar_diagnostico(diagnostico):
 
     add_diagnostico(
         diagnostico["id_paciente"],
-        datetime.datetime.now().strftime("%d-%m-%Y"),
+        (
+            diagnostico["fecha"]
+            if "fecha" in diagnostico and diagnostico["fecha"]
+            else datetime.datetime.now().strftime("%d-%m-%Y")
+        ),
         diagnostico["descripcion_cie"],
         diagnostico["codigo_cie"],
         definitivo,
@@ -169,7 +198,11 @@ def guardar_prescripcion(prescripcion):
     print(f"[evoluciones_crud] prescripcion: {prescripcion}")
     add_prescripcion(
         prescripcion["id_paciente"],
-        datetime.datetime.now().strftime("%d-%m-%Y"),
+        (
+            prescripcion["fecha"]
+            if "fecha" in prescripcion and prescripcion["fecha"]
+            else datetime.datetime.now().strftime("%d-%m-%Y")
+        ),
         prescripcion["medicamento"],
         prescripcion["dosis"],
         prescripcion["indicaciones"],
@@ -184,7 +217,11 @@ def guardar_tratamiento(tratamiento):
     print(f"[evoluciones_crud] tratamiento: {tratamiento}")
     add_tratamiento(
         tratamiento["id_paciente"],
-        datetime.datetime.now().strftime("%d-%m-%Y"),
+        (
+            tratamiento["fecha"]
+            if "fecha" in tratamiento and tratamiento["fecha"]
+            else datetime.datetime.now().strftime("%d-%m-%Y")
+        ),
         tratamiento["descripcion"],
         tratamiento["id_usuario"],
     )
@@ -230,3 +267,67 @@ def guardar_nuevo_cie(codigo: str, descripcion: str) -> str:  # type: ignore
     except Exception as e:
         print(f"[ERROR] Al guardar CIE: {str(e)}")
         return f"❌ Error al guardar: {str(e)}"
+
+
+def actualizar_signos_vitales(signos_vitales):
+    update_signo_vital(
+        signos_vitales["id_signo"],
+        signos_vitales["fecha"],
+        signos_vitales["presion_arterial"],
+        signos_vitales["frecuencia_cardiaca"],
+        signos_vitales["frecuencia_respiratoria"],
+        signos_vitales["temperatura"],
+        signos_vitales["peso"],
+        signos_vitales["talla"],
+    )
+
+
+def actualizar_diagnostico(diagnostico):
+    print(["Valores de actualizar_diagnostico: ", diagnostico])
+    definitivo = 1 if diagnostico["definitivo"] == "Definitivo" else 0
+    update_diagnostico(
+        diagnostico["id_diagnostico"],
+        diagnostico["fecha"],
+        diagnostico["diagnostico"],
+        diagnostico["cie"],
+        definitivo,
+    )
+
+
+def actualizar_prescripcion(prescripcion):
+    print(f"\n[Valores que llegan para actualizar prescripcion]: {prescripcion}")
+    update_prescripcion(
+        prescripcion["id_prescripcion"],
+        prescripcion["fecha"],
+        prescripcion["medicamento"],
+        prescripcion["dosis"],
+        prescripcion["indicaciones"],
+        prescripcion["firmado_por"],
+    )
+
+
+def actualizar_tratamiento(tratamiento):
+    print(f"\n[Valores que llegan para actualizar el tratamiento] {tratamiento}")
+    update_tratamiento(
+        tratamiento["id_tratamiento"],
+        tratamiento["fecha"],
+        tratamiento["tratamiento"],
+    )
+
+
+def actualizar_evolucion(evolucion):
+    print(f"\n[Valores que llegan para actualizar evolución] {evolucion}")
+    update_evolucion(
+        evolucion["id_evolucion"],
+        evolucion["fecha"],
+        evolucion["hora"],
+        evolucion["notas"],
+    )
+
+
+def eliminar_diagnostico_crud(id_diagnostico):
+    delete_diagnostico(id_diagnostico)
+
+
+def eliminar_prescripcion(id_prescripcion):
+    delete_prescripcion(id_prescripcion)

@@ -11,6 +11,7 @@ from .evoluciones_crud import (
     obtener_tratamientos_por_consulta,
     obtener_evoluciones_por_consulta,
     obtener_signos_hoy,
+    obtener_signos_por_fecha,
     obtener_cie,
     guardar_signos_vitales,
     guardar_diagnostico,
@@ -18,6 +19,13 @@ from .evoluciones_crud import (
     guardar_tratamiento,
     guardar_evolucion,
     guardar_nuevo_cie,
+    actualizar_signos_vitales,
+    actualizar_diagnostico,
+    actualizar_prescripcion,
+    actualizar_tratamiento,
+    actualizar_evolucion,
+    eliminar_diagnostico_crud,
+    eliminar_prescripcion,
 )
 from services.paciente_service import get_paciente
 from datetime import datetime
@@ -31,7 +39,9 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
     all_historias = []
     selected_historia = None
     medicamentos_data = {}
+    medicamentos_data_edit = {}
     diagnosticos_data = {}
+    diagnosticos_data_edit = {}
 
     def show_alert(message):
         alert_dialog.content = ft.Text(message)
@@ -420,7 +430,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
                         *[
                             ft.Text(
                                 f"Nota: {nota}",
-                                style=ft.TextStyle(italic=True),
+                                style=ft.TextStyle(italic=True),  # type: ignore
                                 color=ft.colors.GREY_600,
                                 size=12,
                             )
@@ -430,9 +440,26 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
                     spacing=0,
                 )
 
+                titulo_con_botones = ft.Row(
+                    controls=[
+                        titulo_con_notas,
+                        ft.IconButton(
+                            icon=ft.icons.EDIT,
+                            icon_color=ft.colors.BLUE,
+                            tooltip="Editar consulta",
+                            on_click=lambda e, id_p=id_paciente, id_u=id_usuario, f=fecha: open_edit_consult_dialog(
+                                id_p,
+                                id_u,
+                                f,
+                            ),
+                        ),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                )
+
                 consultas_ui.append(
                     ft.ExpansionTile(
-                        title=titulo_con_notas,
+                        title=titulo_con_botones,
                         controls=secciones,
                         initially_expanded=False,
                     )
@@ -462,10 +489,10 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         )
 
     def refresh_pacientes():
-        #print(f"🌀 Refrescando pacientes con query: '{search_query}'")
+        # print(f"🌀 Refrescando pacientes con query: '{search_query}'")
         nonlocal all_historias
         pacientes_list.controls.clear()
-        #print("📤 Antes de agregar, controles visibles:", len(pacientes_list.controls))
+        # print("📤 Antes de agregar, controles visibles:", len(pacientes_list.controls))
 
         all_historias = obtener_historias_clinicas(id_usuario, search_query)
         unique_historias = {}
@@ -613,7 +640,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
     #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!111
 
     def open_create_dialog(id_paciente, id_usuario):
-        print(f"[evidencias_screen] open_create_dialog id_usuario: {id_usuario}")
+        # print(f"[evidencias_screen] open_create_dialog id_usuario: {id_usuario}")
         try:
             # Obtener datos del paciente
             paciente = get_paciente(id_paciente)
@@ -628,7 +655,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
 
             # Verificar si hay signos vitales hoy
             signos_hoy = obtener_signos_hoy(id_paciente, id_usuario)
-            print(f"[evoluciones_screen] signos_hoy: {signos_hoy}")
+            # print(f"[evoluciones_screen] signos_hoy: {signos_hoy}")
             if signos_hoy is None:
                 # Limpiar campos para llenar manualmente
                 signos_presion.value = ""
@@ -694,7 +721,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
             open_prescripciones_dialog()
             return
 
-        presc_fecha.value = datetime.now().strftime("%Y-%m-%d")
+        presc_fecha.value = datetime.now().strftime("%d-%m-%Y")
         presc_firmado_por.value = f"Dr. {nombre.capitalize()} {apellido.capitalize()}"
 
         close_all_dialogs()
@@ -709,7 +736,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
             return
 
         close_all_dialogs()
-        tratamiento_fecha.value = datetime.now().strftime("%Y-%m-%d")
+        tratamiento_fecha.value = datetime.now().strftime("%d-%m-%Y")
         tratamientos_dialog.open = True
         page.update()
 
@@ -725,7 +752,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         page.update()
 
     def save_full_consultation(e, id_paciente):
-        print("[save_full_consultation] id_paciente: ", id_paciente)
+        # print("[save_full_consultation] id_paciente: ", id_paciente)
         if not consulta_nota.value:
             show_alert("La nota de consulta es obligatoria")
             time.sleep(1)
@@ -886,7 +913,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         diagnostico_cie.value = ""
         diagnostico_cie_descripcion.value = ""
         diagnostico_cie_id.value = ""
-        diagnostico_definitivo.value = ""
+        diagnostico_definitivo.value = "Presuntivo"
         cie_list.value = ""
         diagnostico_lista.controls.clear()
 
@@ -913,6 +940,13 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         prescripciones_dialog.open = False
         tratamientos_dialog.open = False
         consulta_dialog.open = False
+
+        signos_dialog_edit.open = False
+        diagnostico_dialog_edit.open = False
+        prescripciones_dialog_edit.open = False
+        tratamientos_dialog_edit.open = False
+        consulta_dialog_edit.open = False
+
         page.update()
 
     def change_page(delta):
@@ -1054,7 +1088,25 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         btn_guardar.update()
         btn_cancelar.update()
 
+    def on_estado_change(e):
+        diagnostico_definitivo.value = e.control.value
+        print(
+            "[on_estado_change] Nuevo estado seleccionado:",
+            diagnostico_definitivo.value,
+        )
+
+    def on_estado_change_edit(e):
+        diagnostico_definitivo_edit.value = e.control.value
+        print(
+            "[on_estado_change_edit] Nuevo estado seleccionado:",
+            diagnostico_definitivo_edit.value,
+        )
+
     def agregar_diagnostico(e):
+        print(
+            "[agregar_diagnostico] diagnostico_definitivo.value: ",
+            diagnostico_definitivo.value,
+        )
         # Validar que se haya ingresado o seleccionado un CIE y su descripción
         if not diagnostico_cie.value or not diagnostico_cie_descripcion.value:
             show_alert("El código CIE y la descripción son obligatorios")
@@ -1068,7 +1120,11 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
             "id": diag_id,
             "codigo": diagnostico_cie.value,
             "descripcion": diagnostico_cie_descripcion.value,
-            "estado": diagnostico_definitivo.value or "Presuntivo",
+            "estado": (
+                diagnostico_definitivo.value
+                if diagnostico_definitivo.value
+                else "Presuntivo"
+            ),
         }
 
         # Si se está en modo edición, actualizar el elemento existente
@@ -1122,9 +1178,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         # Limpiar los campos para permitir agregar otro diagnóstico
         diagnostico_cie.value = ""
         diagnostico_cie_descripcion.value = ""
-        diagnostico_definitivo.value = (
-            None  # O establecer un valor por defecto si lo prefieres
-        )
+        diagnostico_definitivo.value = "Presuntivo"
         diagnostico_lista.update()
         page.update()
 
@@ -1196,22 +1250,958 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         # agregar_diagnostico(None)
         page.update()
 
+    ##!!!!!!!!!! FUNCIONES DE EDIT
+
+    # Función para abrir el formulario en modo edición
+    def open_edit_consult_dialog(id_paciente, id_usuario, fecha_consulta):
+        # print(
+        #     f"[evidencias_screen] open_edit_consult_dialog id_usuario: {id_paciente, id_usuario, fecha_consulta}"
+        # )
+        try:
+            # Obtener datos del paciente
+            paciente = get_paciente(id_paciente)
+            if not paciente:
+                show_alert("No se encontró el paciente")
+                return
+
+            # Configurar los campos con los datos del paciente (se asume que se reutilizan los mismos campos de info)
+            new_consult_paciente_info.value = f"{paciente.nombre} {paciente.apellido} - {paciente.num_historia_clinica}"
+            new_consult_paciente_id.value = id_paciente
+            new_consult_paciente_nombre.value = f"{paciente.nombre} {paciente.apellido}"
+            edit_consult_fecha.value = fecha_consulta
+
+            # Cargar los signos vitales existentes (si existen) en el modo edición
+            signos_list = obtener_signos_vitales_paciente(id_paciente, id_usuario)
+            signo_consulta = None
+            if signos_list:
+                for s in signos_list:
+                    if s.fecha == fecha_consulta:
+                        signo_consulta = s
+                        break
+
+            if signo_consulta is None:
+                # print(f"NO HAY REGISTRO DE SIGNOS: {signo_consulta}, {signos_list}")
+                show_alert("NO HAY REGISTRO DE SIGNOS")
+            else:
+                # Si existen, se cargan los datos en los campos correspondientes
+                edit_id_signos.value = signo_consulta.id_signo
+                signos_presion_edit.value = getattr(
+                    signo_consulta, "presion_arterial", ""
+                )
+                signos_frec_cardiaca_edit.value = getattr(
+                    signo_consulta, "frecuencia_cardiaca", ""
+                )
+                signos_frec_respi_edit.value = getattr(
+                    signo_consulta, "frecuencia_respiratoria", ""
+                )
+                signos_temp_edit.value = getattr(signo_consulta, "temperatura", "")
+                signos_peso_edit.value = getattr(signo_consulta, "peso", "")
+                signos_talla_edit.value = getattr(signo_consulta, "talla", "")
+                open_signos_dialog_edit()
+
+            page.update()
+
+        except Exception as ex:
+            show_alert(f"Error al abrir formulario en edición: {str(ex)}")
+
+    # --- Funciones de flujo en modo edición ---
+
+    def open_signos_dialog_edit():
+        close_all_dialogs()
+        signos_dialog_edit.open = True
+        page.update()
+
+    def open_diagnostico_dialog_edit(
+        id_paciente, fecha_consulta, from_tratamientos=False
+    ):
+        # Validar que se hayan ingresado todos los signos vitales en modo edición
+        if (
+            not signos_presion_edit.value
+            or not signos_frec_cardiaca_edit.value
+            or not signos_frec_respi_edit.value
+            or not signos_temp_edit.value
+            or not signos_peso_edit.value
+            or not signos_talla_edit.value
+        ):
+            show_alert("Es necesario que se llenen todos los campos de signos vitales")
+            time.sleep(1)
+            open_signos_dialog_edit()
+            return
+
+        # Si es la primera vez (o no se está viniendo desde tratamientos) se consulta la base de datos
+        if not diagnosticos_data_edit or not from_tratamientos:
+            data_diagnostico_edit_consult = obtener_diagnosticos_por_consulta(
+                id_paciente, fecha_consulta
+            )
+            # print(
+            #     "\n[open_diagnostico_dialog_edit]: data from DB: {}\n".format(
+            #         [vars(d) for d in data_diagnostico_edit_consult]
+            #     )
+            # )
+            # Limpiar la estructura para evitar duplicados
+            diagnosticos_data_edit.clear()
+            # Recorrer los datos obtenidos y almacenarlos (accediendo a atributos en lugar de índices)
+            for diag in data_diagnostico_edit_consult:
+                estado = "Definitivo" if diag.definitivo == 1 else "Presuntivo"
+                diagnosticos_data_edit[diag.id_diagnostico] = {
+                    "id": diag.id_diagnostico,
+                    "codigo": diag.cie,
+                    "descripcion": diag.diagnostico,
+                    "estado": estado,
+                    "definitivo": diag.definitivo,
+                }
+        else:
+            print(
+                "\n[open_diagnostico_dialog_edit]: usando diagnosticos_data_edit ya cargados: {}\n".format(
+                    diagnosticos_data_edit
+                )
+            )
+
+        # Limpiar la lista de UI de diagnósticos
+        diagnostico_lista_edit.controls.clear()
+
+        # Para evitar duplicados, creamos un nuevo diccionario que contenga solo los diagnósticos mostrados
+        new_diagnosticos_data_edit = {}
+
+        # Reconstruir la UI a partir de los datos cargados en diagnosticos_data_edit
+        # Se recorre una copia para evitar modificar el diccionario durante la iteración
+        for key, diag_data in diagnosticos_data_edit.copy().items():
+            # Crear el contenido del tile con la información del diagnóstico
+            info_column = ft.Column(
+                controls=[
+                    ft.Text(
+                        f"{diag_data['codigo']} - {diag_data['estado']}",
+                        weight=ft.FontWeight.BOLD,
+                    ),
+                    ft.Text(diag_data["descripcion"]),
+                ],
+                expand=True,
+            )
+            btn_editar = ft.IconButton(icon=ft.icons.EDIT)
+            btn_eliminar = ft.IconButton(icon=ft.icons.DELETE)
+
+            tile = ft.Container(
+                width=900,
+                padding=10,
+                border=ft.border.all(1, ft.colors.GREY_300),
+                content=ft.Row(
+                    controls=[info_column, ft.Row([btn_editar, btn_eliminar])],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+            )
+
+            # Mapear los eventos para editar o eliminar
+            btn_editar.on_click = lambda e, tile=tile: editar_diagnostico_edit(e, tile)
+            btn_eliminar.on_click = lambda e, tile=tile: eliminar_diagnostico_edit(
+                e, tile
+            )
+
+            # Agregar el tile a la lista de UI
+            diagnostico_lista_edit.controls.append(tile)
+            # Almacenar la data usando el id del tile como clave para mantener consistencia
+            new_diagnosticos_data_edit[id(tile)] = {
+                "id": diag_data["id"],
+                "codigo": diag_data["codigo"],
+                "descripcion": diag_data["descripcion"],
+                "estado": diag_data["estado"],
+                "definitivo": diag_data.get("definitivo", 0),
+            }
+
+        # Reemplazar el diccionario original con el nuevo sin duplicados
+        diagnosticos_data_edit.clear()
+        diagnosticos_data_edit.update(new_diagnosticos_data_edit)
+
+        # print(
+        #     "\n[open_diagnostico_dialog_edit]: diagnosticos_data_edit final: {}\n".format(
+        #         diagnosticos_data_edit
+        #     )
+        # )
+
+        close_all_dialogs()
+        diagnostico_dialog_edit.open = True
+        page.update()
+
+    def open_prescripciones_dialog_edit(
+        id_paciente, fecha_consulta, from_tratamientos=False
+    ):
+        if len(diagnostico_lista_edit.controls) == 0:
+            show_alert("Debe agregar al menos un diagnóstico")
+            time.sleep(1)
+            open_prescripciones_dialog_edit(
+                id_paciente, fecha_consulta, from_tratamientos
+            )
+            return
+
+        presc_fecha_edit.value = fecha_consulta
+        presc_firmado_por_edit.value = (
+            f"Dr. {nombre.capitalize()} {apellido.capitalize()}"
+        )
+
+        # Si es la primera vez (o no se viene desde tratamientos), se consulta la base de datos
+        if not medicamentos_data_edit or not from_tratamientos:
+            data_prescripciones = obtener_prescripciones_por_consulta(
+                id_paciente, fecha_consulta
+            )
+            # print(
+            #     "\n[open_prescripciones_dialog_edit]: data from DB: {}\n".format(
+            #         [
+            #             vars(p) if hasattr(p, "__dict__") else p
+            #             for p in data_prescripciones
+            #         ]
+            #     )
+            # )
+
+            medicamentos_data_edit.clear()
+            for presc in data_prescripciones:
+                medicamentos_data_edit[presc.id_prescripcion] = {
+                    "id": presc.id_prescripcion,
+                    "medicamento": presc.medicamento,
+                    "dosis": presc.dosis,
+                    "indicaciones": presc.indicaciones,
+                }
+        else:
+            print(
+                "\n[open_prescripciones_dialog_edit]: usando medicamentos_data_edit ya cargados: {}\n".format(
+                    medicamentos_data_edit
+                )
+            )
+
+        # Reconstruimos la UI desde medicamentos_data_edit
+        prescripciones_lista_edit.controls.clear()
+        new_prescripciones_data_edit = {}
+
+        for key, presc_data in medicamentos_data_edit.copy().items():
+            info_column = ft.Column(
+                controls=[
+                    ft.Text(
+                        f"{presc_data['medicamento']} - {presc_data['dosis']}",
+                        weight=ft.FontWeight.BOLD,
+                    ),
+                    ft.Text(presc_data["indicaciones"] or "Sin indicaciones"),
+                ],
+                expand=True,
+            )
+            btn_editar = ft.IconButton(icon=ft.icons.EDIT)
+            btn_eliminar = ft.IconButton(icon=ft.icons.DELETE)
+
+            tile = ft.Container(
+                width=900,
+                padding=10,
+                border=ft.border.all(1, ft.colors.GREY_300),
+                content=ft.Row(
+                    controls=[info_column, ft.Row([btn_editar, btn_eliminar])],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+            )
+
+            btn_editar.on_click = lambda e, tile=tile: editar_medicamento_edit(e, tile)
+            btn_eliminar.on_click = lambda e, tile=tile: eliminar_medicamento_edit(
+                e, tile
+            )
+
+            prescripciones_lista_edit.controls.append(tile)
+            new_prescripciones_data_edit[id(tile)] = {
+                "id": presc_data["id"],
+                "medicamento": presc_data["medicamento"],
+                "dosis": presc_data["dosis"],
+                "indicaciones": presc_data.get("indicaciones", ""),
+            }
+
+        medicamentos_data_edit.clear()
+        medicamentos_data_edit.update(new_prescripciones_data_edit)
+
+        close_all_dialogs()
+        prescripciones_dialog_edit.open = True
+        page.update()
+
+    def open_tratamientos_dialog_edit(id_paciente, fecha_consulta, from_consulta):
+        if len(prescripciones_lista_edit.controls) == 0:
+            show_alert("Debe agregar al menos un medicamento")
+            time.sleep(1)
+            open_prescripciones_dialog_edit(
+                new_consult_paciente_id.value, edit_consult_fecha, False
+            )
+            return
+        data_tratamientos_edit = obtener_tratamientos_por_consulta(
+            id_paciente, fecha_consulta
+        )
+
+        # print(
+        #     "\n[prescripciones_dialog_edit]: data from DB: {}\n".format(
+        #         [
+        #             vars(p) if hasattr(p, "__dict__") else p
+        #             for p in data_tratamientos_edit
+        #         ]
+        #     )
+        # )
+
+        tratamiento_fecha_edit.value = fecha_consulta
+        if not from_consulta:
+            # Solo consultamos la base de datos si no venimos de una edición previa
+            data_tratamientos_edit = obtener_tratamientos_por_consulta(
+                id_paciente, fecha_consulta
+            )
+
+            # print(
+            #     "\n[prescripciones_dialog_edit]: data from DB: {}\n".format(
+            #         [
+            #             vars(p) if hasattr(p, "__dict__") else p
+            #             for p in data_tratamientos_edit
+            #         ]
+            #     )
+            # )
+
+            if data_tratamientos_edit:
+                tratamiento = data_tratamientos_edit[0]  # asumimos que solo hay uno
+                tratamiento_descripcion_edit.value = tratamiento.tratamiento
+            else:
+                tratamiento_descripcion_edit.value = ""
+        close_all_dialogs()
+        tratamientos_dialog_edit.open = True
+        page.update()
+
+    def open_consulta_dialog_edit():
+        if not tratamiento_descripcion_edit.value:
+            show_alert("El campo de tratamiento es obligatorio")
+            time.sleep(1)
+            open_tratamientos_dialog_edit(
+                new_consult_paciente_id.value,
+                edit_consult_fecha.value,
+                True,
+            )
+            return
+
+        # Obtener datos de evolución
+        id_paciente = new_consult_paciente_id.value
+        fecha_consulta = edit_consult_fecha.value
+
+        data_evolucion = obtener_evoluciones_por_consulta(id_paciente, fecha_consulta)
+
+        # print(
+        #     "\n[evolucion_dialog_edit]: data from DB: {}\n".format(
+        #         [vars(p) if hasattr(p, "__dict__") else p for p in data_evolucion]
+        #     )
+        # )
+
+        if data_evolucion:
+            evolucion = data_evolucion[0]  # asumimos que solo hay uno
+
+            # Rellenar los campos
+            consulta_nota_edit.value = evolucion.notas
+
+        close_all_dialogs()
+        consulta_dialog_edit.open = True
+        page.update()
+
+    def save_full_consultation_edit(e, id_paciente):
+        # print("[save_full_consultation_edit] id_paciente:", id_paciente)
+
+        if not consulta_nota_edit.value:
+            show_alert("La nota de consulta es obligatoria")
+            time.sleep(1)
+            open_consulta_dialog_edit()
+            return
+
+        if not diagnostico_lista_edit.controls:
+            show_alert("Debe agregar al menos un diagnóstico")
+            time.sleep(1)
+            open_diagnostico_dialog_edit(
+                new_consult_paciente_id, edit_consult_fecha, False
+            )
+            return
+
+        try:
+            # 1. SIGNOS VITALES
+            signos_db = obtener_signos_por_fecha(
+                id_paciente, id_usuario, edit_consult_fecha.value
+            )
+
+            # Extraer los nuevos valores
+            nuevos_signos = {
+                "id_signo": edit_id_signos.value,
+                "fecha": edit_consult_fecha.value,
+                "presion_arterial": signos_presion_edit.value,
+                "frecuencia_cardiaca": signos_frec_cardiaca_edit.value,
+                "frecuencia_respiratoria": signos_frec_respi_edit.value,
+                "temperatura": signos_temp_edit.value,
+                "peso": signos_peso_edit.value,
+                "talla": signos_talla_edit.value,
+            }
+
+            # Imprimir estado original
+            if signos_db:
+                original = (
+                    vars(signos_db[0])
+                    if isinstance(signos_db, list)
+                    else vars(signos_db)
+                )
+                # print(f"\n[save_full_edit - signos_vitales] original: {original}")
+            else:
+                original = None
+                # print(
+                #     "\n[save_full_edit - signos_vitales] original: No signos vitales disponibles"
+                # )
+
+            # Imprimir los nuevos signos
+            # print(f"\n[Nuevos signos] {nuevos_signos}")
+
+            # Comparar y actualizar solo si cambió algo
+            if not original or any(
+                original.get(k) != v for k, v in nuevos_signos.items()
+            ):
+                # print(
+                #     "\n[save_full_edit - signos_vitales] Cambios detectados. Actualizando..."
+                # )
+                actualizar_signos_vitales(nuevos_signos)
+            else:
+                print(
+                    "\n[save_full_edit - signos_vitales] Sin cambios. No se actualiza."
+                )
+
+            # 2. DIAGNÓSTICOS
+            diag_db = obtener_diagnosticos_por_consulta(
+                id_paciente, edit_consult_fecha.value
+            )
+            # print(
+            #     f"\n[save_full_edit - diagnostico] original: {[vars(d) for d in diag_db]}"
+            # )
+
+            # Diagnósticos que vienen desde la UI
+            diag_ui = []
+            for tile in diagnostico_lista_edit.controls:
+                data = diagnosticos_data_edit.get(id(tile), {})
+                diag_ui.append(
+                    {
+                        "codigo": data.get("codigo", "").strip(),
+                        "descripcion": data.get("descripcion", "").strip(),
+                        "estado": data.get(
+                            "estado", ""
+                        ).strip(),  # "Definitivo" o "Presuntivo"
+                    }
+                )
+
+            # Mapeamos diagnósticos de la DB por código
+            diag_db_by_code = {d.cie: d for d in diag_db}
+
+            nuevos_diag = []
+            modificados_diag = []
+            codigos_ui = set()
+
+            for d_ui in diag_ui:
+                cod = d_ui["codigo"]
+                codigos_ui.add(cod)
+                d_db = diag_db_by_code.get(cod)
+
+                if d_db:
+                    # Ya existe, comparamos si cambió descripción o estado (convirtiendo 0/1 a texto)
+                    estado_db = "Definitivo" if d_db.definitivo == 1 else "Presuntivo"
+                    if (
+                        d_ui["descripcion"] != d_db.diagnostico
+                        or d_ui["estado"] != estado_db
+                    ):
+                        modificados_diag.append((d_db.id_diagnostico, d_ui))
+                else:
+                    # No está en la base, es nuevo
+                    nuevos_diag.append(d_ui)
+
+            # Eliminados: los que estaban en DB pero no en UI
+            eliminados_diag = [d for d in diag_db if d.cie not in codigos_ui]
+
+            # Imprimir resultados
+            # print(f"\n[nuevos_diag]: {nuevos_diag}")
+            # print(f"\n[modificados_diag]: {modificados_diag}")
+            # print(f"\n[eliminados_diag]: {[vars(d) for d in eliminados_diag]}")
+
+            # print(f"edit_consult_fecha.value: {edit_consult_fecha.value}")
+
+            # Guardar nuevos
+            for d in nuevos_diag:
+                codigo_cie = d["codigo"]
+                descripcion_cie = d["descripcion"]
+
+                # Verificar si el código CIE ya existe en la base
+                cie_existente = obtener_cie(codigo_cie)
+                if not cie_existente:
+                    guardar_nuevo_cie(codigo_cie, descripcion_cie)
+
+                guardar_diagnostico(
+                    {
+                        "id_paciente": id_paciente,
+                        "fecha": edit_consult_fecha.value,
+                        "descripcion_cie": d["descripcion"],
+                        "codigo_cie": d["codigo"],
+                        "definitivo": d["estado"],
+                        "id_usuario": id_usuario,
+                    }
+                )
+
+            # Actualizar modificados
+            for id_diag, d in modificados_diag:
+                actualizar_diagnostico(
+                    {
+                        "id_diagnostico": id_diag,
+                        "fecha": edit_consult_fecha.value,
+                        "diagnostico": d["descripcion"],
+                        "cie": d["codigo"],
+                        "definitivo": d["estado"],
+                    }
+                )
+
+            # Eliminar los removidos
+            for d in eliminados_diag:
+                eliminar_diagnostico_crud(d.id_diagnostico)
+
+            # 3. PRESCRIPCIONES
+            presc_db = obtener_prescripciones_por_consulta(
+                id_paciente, edit_consult_fecha.value
+            )
+            # print(
+            #     f"\n[save_full_edit - prescripciones] original: {[vars(p) for p in presc_db]}"
+            # )
+
+            # Prescripciones desde la UI
+            presc_ui = []
+            for med_tile in prescripciones_lista_edit.controls:
+                col = med_tile.content.controls[0]
+                medicamento, dosis = col.controls[0].value.split(" - ")
+                indicaciones = col.controls[1].value
+                presc_ui.append(
+                    {
+                        "medicamento": medicamento.strip(),
+                        "dosis": dosis.strip(),
+                        "indicaciones": (
+                            ""
+                            if indicaciones.strip() == "Sin indicaciones"
+                            else indicaciones.strip()
+                        ),
+                    }
+                )
+
+            # Mapeamos por (medicamento, dosis)
+            presc_db_by_medicamento = {p.medicamento: p for p in presc_db}
+
+            nuevos_p = []
+            modificados_p = []
+            meds_ui = set()
+
+            for p_ui in presc_ui:
+                med = p_ui["medicamento"]
+                meds_ui.add(med)
+                p_db = presc_db_by_medicamento.get(med)
+
+                if p_db:
+                    # Comparar si hay cambios en dosis o indicaciones
+                    if (
+                        p_ui["dosis"] != p_db.dosis
+                        or p_ui["indicaciones"] != p_db.indicaciones
+                    ):
+                        modificados_p.append((p_db.id_prescripcion, p_ui))
+                else:
+                    nuevos_p.append(p_ui)
+
+            # Eliminados: estaban en la DB pero no en la UI
+            eliminados_p = [
+                p for m, p in presc_db_by_medicamento.items() if m not in meds_ui
+            ]
+
+            # Mostrar resultados
+            # print(f"\n[nuevos_p]: {nuevos_p}")
+            # print(f"\n[modificados_p]: {modificados_p}")
+            # print(f"\n[eliminados_p]: {[vars(p) for p in eliminados_p]}")
+
+            # Guardar nuevos
+            for p in nuevos_p:
+                guardar_prescripcion(
+                    {
+                        "id_paciente": id_paciente,
+                        "fecha": edit_consult_fecha.value,
+                        "medicamento": p["medicamento"],
+                        "dosis": p["dosis"],
+                        "indicaciones": p["indicaciones"],
+                        "firmado_por": presc_firmado_por_edit.value,
+                        "id_usuario": id_usuario,
+                    }
+                )
+
+            # Actualizar modificados
+            for id_p, p in modificados_p:
+                actualizar_prescripcion(
+                    {
+                        "id_prescripcion": id_p,
+                        "fecha": edit_consult_fecha.value,
+                        "medicamento": p["medicamento"],
+                        "dosis": p["dosis"],
+                        "indicaciones": p["indicaciones"],
+                        "firmado_por": presc_firmado_por_edit.value,
+                    }
+                )
+
+            # Eliminar removidos
+            for p in eliminados_p:
+                eliminar_prescripcion(p.id_prescripcion)
+
+            # # 4. TRATAMIENTO
+            tratamiento = obtener_tratamientos_por_consulta(
+                id_paciente, edit_consult_fecha.value
+            )
+            # print(
+            #     f"\n[save_full_edit - tratamiento] original: {[vars(p) for p in tratamiento]}"
+            # )
+            if tratamiento:
+                t_db = tratamiento[0]  # solo uno por consulta
+                t_ui = tratamiento_descripcion_edit.value.strip()
+                fecha_ui = tratamiento_fecha_edit.value
+
+                # Solo actualizamos si cambió el texto o la fecha
+                if t_ui != t_db.tratamiento or fecha_ui != t_db.fecha:
+                    datos_trat_actualizado = {
+                        "id_tratamiento": t_db.id_tratamiento,
+                        "fecha": fecha_ui,
+                        "tratamiento": t_ui,
+                    }
+                    actualizar_tratamiento(datos_trat_actualizado)
+
+            # 5. EVOLUCIÓN
+            evolucion = obtener_evoluciones_por_consulta(
+                id_paciente, edit_consult_fecha.value
+            )
+            if evolucion:
+                e_db = evolucion[0]
+                notas_ui = consulta_nota_edit.value.strip()
+
+                # Solo actualizamos si cambiaron las notas
+                if notas_ui != e_db.notas:
+                    datos_evolucion_actualizada = {
+                        "id_evolucion": e_db.id_evolucion,
+                        "fecha": e_db.fecha,
+                        "hora": e_db.hora,
+                        "notas": notas_ui,
+                    }
+                    actualizar_evolucion(datos_evolucion_actualizada)
+
+            # 🔔 Mostrar resumen
+            show_alert("✔️ La consulta ha sido actualizada exitosamente.")
+
+            limpiar_campos_consulta_edit()
+            close_all_dialogs()
+            refresh_pacientes()
+
+        except Exception as ex:
+            show_alert(f"❌ Error al guardar la edición: {str(ex)}")
+
+    def limpiar_campos_consulta_edit():
+        """Limpia los campos del formulario de edición luego de guardar"""
+        # Signos vitales
+        signos_presion_edit.value = ""
+        signos_frec_cardiaca_edit.value = ""
+        signos_frec_respi_edit.value = ""
+        signos_temp_edit.value = ""
+        signos_peso_edit.value = ""
+        signos_talla_edit.value = ""
+
+        # Diagnóstico
+        diagnostico_buscador_edit.value = ""
+        diagnostico_cie_edit.value = ""
+        diagnostico_cie_descripcion_edit.value = ""
+        diagnostico_cie_id_edit.value = ""
+        diagnostico_definitivo_edit.value = "Presuntivo"
+        cie_list_edit.controls.clear()
+        diagnostico_lista_edit.controls.clear()
+
+        # Prescripciones
+        prescripciones_lista_edit.controls.clear()
+        presc_medicamento_edit.value = ""
+        presc_dosis_edit.value = ""
+        presc_indicaciones_edit.value = ""
+        presc_firmado_por_edit.value = ""
+
+        # Tratamiento
+        tratamiento_descripcion_edit.value = ""
+
+        # Consulta
+        consulta_nota_edit.value = ""
+
+        page.update()
+
+    def agregar_diagnostico_edit(e):
+        # Validar que se haya ingresado o seleccionado un CIE y su descripción
+        if not diagnostico_cie_edit.value or not diagnostico_cie_descripcion_edit.value:
+            show_alert("El código CIE y la descripción son obligatorios")
+            time.sleep(1)
+            open_diagnostico_dialog(from_signos=False)
+            return
+
+        # Crear un ID único para el diagnóstico
+        diag_id_edit = str(uuid.uuid4())
+        diag_data_edit = {
+            "id": diag_id_edit,
+            "codigo": diagnostico_cie_edit.value,
+            "descripcion": diagnostico_cie_descripcion_edit.value,
+            "estado": diagnostico_definitivo_edit.value or "Presuntivo",
+        }
+
+        # Si se está en modo edición, actualizar el elemento existente
+        if hasattr(diagnostico_cie_edit, "editing_id"):
+            for tile in diagnostico_lista_edit.controls:
+                if (
+                    diagnosticos_data_edit.get(id(tile))
+                    and diagnosticos_data_edit[id(tile)]["id"]
+                    == diagnostico_cie_edit.editing_id
+                ):
+                    info_column_edit = tile.content.controls[0]
+                    info_column_edit.controls[0].value = (
+                        f"{diag_data_edit['codigo']} - {diag_data_edit['estado']}"
+                    )
+                    info_column_edit.controls[1].value = diag_data_edit["descripcion"]
+                    diagnosticos_data_edit[id(tile)] = diag_data_edit
+                    break
+            delattr(diagnostico_cie_edit, "editing_id")
+        else:
+            # Crear el tile para el diagnóstico
+            info_column_edit = ft.Column(
+                controls=[
+                    ft.Text(
+                        f"{diag_data_edit['codigo']} - {diag_data_edit['estado']}",
+                        weight=ft.FontWeight.BOLD,
+                    ),
+                    ft.Text(diag_data_edit["descripcion"]),
+                ],
+                expand=True,
+            )
+            btn_editar_edit = ft.IconButton(icon=ft.icons.EDIT)
+            btn_eliminar_edit = ft.IconButton(icon=ft.icons.DELETE)
+            btn_row_edit = ft.Row(controls=[btn_editar_edit, btn_eliminar_edit])
+            row_container_edit = ft.Row(
+                controls=[info_column_edit, btn_row_edit],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            )
+            nuevo_tile_edit = ft.Container(
+                width=900,
+                padding=10,
+                border=ft.border.all(1, ft.colors.GREY_300),
+                content=row_container_edit,
+            )
+            # Asignar las funciones de editar y eliminar usando lambda para capturar el tile
+            btn_editar_edit.on_click = (
+                lambda e, tile=nuevo_tile_edit: editar_diagnostico_edit(e, tile)
+            )
+            btn_eliminar_edit.on_click = (
+                lambda e, tile=nuevo_tile_edit: eliminar_diagnostico_edit(e, tile)
+            )
+            diagnosticos_data_edit[id(nuevo_tile_edit)] = diag_data_edit
+            diagnostico_lista_edit.controls.append(nuevo_tile_edit)
+
+        # Limpiar los campos para permitir agregar otro diagnóstico
+        diagnostico_cie_edit.value = ""
+        diagnostico_cie_descripcion_edit.value = ""
+        diagnostico_definitivo_edit.value = "Presuntivo"
+        diagnostico_lista_edit.update()
+        page.update()
+
+    def editar_diagnostico_edit(e, tile):
+        diag_data_edit = diagnosticos_data_edit.get(id(tile), {})
+        diagnostico_cie_edit.value = diag_data_edit.get("codigo", "")
+        diagnostico_cie_descripcion_edit.value = diag_data_edit.get("descripcion", "")
+        diagnostico_definitivo_edit.value = diag_data_edit.get("estado", "Presuntivo")
+        diagnostico_cie_edit.editing_id = diag_data_edit.get("id", "")
+        page.update()
+
+    def eliminar_diagnostico_edit(e, tile):
+        if id(tile) in diagnosticos_data_edit:
+            del diagnosticos_data_edit[id(tile)]
+        diagnostico_lista_edit.controls.remove(tile)
+        diagnostico_lista_edit.update()
+        page.update()
+
+    def on_search_cie_edit(e):
+        search_query = e.control.value
+        refresh_cie_edit(search_query)
+
+    def refresh_cie_edit(search_query=""):
+        cie_list_edit.controls.clear()
+        resultados = obtener_cie(search_query)
+        if not resultados:
+            cie_list_edit.controls.append(
+                ft.ListTile(
+                    title=ft.Text("No se encontraron resultados locales"),
+                    subtitle=ft.Text("Puedes buscar en:"),
+                )
+            )
+            btn_buscar_externo_edit.visible = True
+            diagnostico_cie_edit.disabled = False
+            diagnostico_cie_descripcion_edit.disabled = False
+        else:
+            btn_buscar_externo_edit.visible = False
+            for cie in resultados:
+                cie_list_edit.controls.append(
+                    ft.ListTile(
+                        leading=ft.Icon(ft.icons.MEDICAL_SERVICES),
+                        title=ft.Text(cie["codigo"]),
+                        subtitle=ft.Text(cie["descripcion"], max_lines=2),
+                        on_click=lambda e, cie=cie: seleccionar_cie_edit(cie),
+                    )
+                )
+        cie_list_edit.update()
+        page.update()
+
+    def seleccionar_cie_edit(cie):
+        diagnostico_cie_id_edit.value = str(cie["id"])
+        diagnostico_cie_edit.value = cie["codigo"]
+        diagnostico_cie_descripcion_edit.value = cie["descripcion"]
+        diagnostico_definitivo_edit.value = "Presuntivo"
+        btn_buscar_externo_edit.visible = False
+        page.update()
+
+    def agregar_medicamento_edit(e):
+        if not presc_medicamento_edit.value or not presc_dosis_edit.value:
+            show_alert("Medicamento y dosis son obligatorios")
+            return
+
+        # Crear un ID único y empaquetar los datos
+        med_id = str(uuid.uuid4())
+        med_data = {
+            "medicamento": presc_medicamento_edit.value,
+            "dosis": presc_dosis_edit.value,
+            "indicaciones": presc_indicaciones_edit.value or "",
+        }
+
+        if hasattr(presc_medicamento_edit, "editing_id"):
+            # Actualizar el medicamento en modo edición
+            for tile in prescripciones_lista_edit.controls:
+                if (
+                    medicamentos_data_edit.get(id(tile))
+                    and medicamentos_data_edit[id(tile)]["id"]
+                    == presc_medicamento_edit.editing_id
+                ):
+                    info_column = tile.content.controls[
+                        0
+                    ]  # Se asume estructura: Row > Column de info
+                    info_column.controls[0].value = (
+                        f"{med_data['medicamento']} - {med_data['dosis']}"
+                    )
+                    info_column.controls[1].value = (
+                        med_data["indicaciones"] or "Sin indicaciones"
+                    )
+                    medicamentos_data_edit[id(tile)] = {"id": med_id, **med_data}
+                    break
+            delattr(presc_medicamento_edit, "editing_id")
+        else:
+            # Crear nuevo medicamento
+            info_column = ft.Column(
+                controls=[
+                    ft.Text(
+                        f"{med_data['medicamento']} - {med_data['dosis']}",
+                        weight=ft.FontWeight.BOLD,
+                    ),
+                    ft.Text(med_data["indicaciones"] or "Sin indicaciones"),
+                ],
+                expand=True,
+            )
+            btn_editar = ft.IconButton(
+                icon=ft.icons.EDIT,
+                on_click=lambda e, tile=None: None,  # Se asignará después
+            )
+            btn_eliminar = ft.IconButton(
+                icon=ft.icons.DELETE, on_click=lambda e, tile=None: None
+            )
+            btn_row = ft.Row(controls=[btn_editar, btn_eliminar])
+            row_container = ft.Row(
+                controls=[info_column, btn_row],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            )
+            nuevo_tile = ft.Container(
+                width=900,
+                padding=10,
+                border=ft.border.all(1, ft.colors.GREY_300),
+                content=row_container,
+            )
+            # Asignar funciones a los botones usando lambda para capturar el tile
+            btn_editar.on_click = lambda e, tile=nuevo_tile: editar_medicamento_edit(
+                e, tile
+            )
+            btn_eliminar.on_click = (
+                lambda e, tile=nuevo_tile: eliminar_medicamento_edit(e, tile)
+            )
+            medicamentos_data_edit[id(nuevo_tile)] = {"id": med_id, **med_data}
+            prescripciones_lista_edit.controls.append(nuevo_tile)
+
+        # Limpiar campos y restaurar botones al modo por defecto
+        presc_medicamento_edit.value = ""
+        presc_dosis_edit.value = ""
+        presc_indicaciones_edit.value = ""
+        update_action_buttons_edit("default")
+        prescripciones_lista_edit.update()
+        page.update()
+
+    def editar_medicamento_edit(e, tile):
+        # Extraer los datos del medicamento desde el diccionario en modo edición
+        med_data = medicamentos_data_edit.get(id(tile), {})
+        presc_medicamento_edit.value = med_data.get("medicamento", "")
+        presc_dosis_edit.value = med_data.get("dosis", "")
+        presc_indicaciones_edit.value = med_data.get("indicaciones", "")
+        presc_medicamento_edit.editing_id = med_data.get("id", "")
+        update_action_buttons_edit("edit")
+        page.update()
+
+    def eliminar_medicamento_edit(e, tile):
+        if id(tile) in medicamentos_data_edit:
+            del medicamentos_data_edit[id(tile)]
+        prescripciones_lista_edit.controls.remove(tile)
+        prescripciones_lista_edit.update()
+        page.update()
+
+    def cancelar_edicion_edit(e):
+        presc_medicamento_edit.value = ""
+        presc_dosis_edit.value = ""
+        presc_indicaciones_edit.value = ""
+        if hasattr(presc_medicamento_edit, "editing_id"):
+            delattr(presc_medicamento_edit, "editing_id")
+        update_action_buttons_edit("default")
+        page.update()
+
+    def update_action_buttons_edit(mode):
+        if mode == "edit":
+            btn_agregar_edit.visible = False
+            btn_guardar_edit.visible = True
+            btn_cancelar_edit.visible = True
+        else:  # modo "default"
+            btn_agregar_edit.visible = True
+            btn_guardar_edit.visible = False
+            btn_cancelar_edit.visible = False
+        btn_agregar_edit.update()
+        btn_guardar_edit.update()
+        btn_cancelar_edit.update()
+
+    ##!!!!!!!!!!!!!
+
     # UI
     ui = crear_evoluciones_ui(
         page,
         on_search,
         on_search_cie,
+        on_search_cie_edit,
+        on_estado_change,
+        on_estado_change_edit,
         change_page,
         save_edit,
         open_diagnostico_dialog,
+        open_diagnostico_dialog_edit,
         open_prescripciones_dialog,
+        open_prescripciones_dialog_edit,
         open_signos_dialog,
+        open_signos_dialog_edit,
         open_tratamientos_dialog,
+        open_tratamientos_dialog_edit,
         open_consulta_dialog,
+        open_consulta_dialog_edit,
         agregar_medicamento,
+        agregar_medicamento_edit,
         cancelar_edicion,
+        cancelar_edicion_edit,
         agregar_diagnostico,
+        agregar_diagnostico_edit,
         save_full_consultation,
+        save_full_consultation_edit,
         close_all_dialogs,
     )
     page_number_text = ui["page_number_text"]
@@ -1259,6 +2249,44 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
     consulta_dialog = ui["consulta_dialog"]
     btn_buscar_externo = ui["btn_buscar_externo"]
 
+    # Variables de edición (de los nuevos diálogos)
+    edit_id_signos = ui["edit_id_signos"]
+    edit_consult_fecha = ui["edit_consult_fecha"]
+    signos_dialog_edit = ui["signos_dialog_edit"]
+    signos_presion_edit = ui["signos_presion_edit"]
+    signos_frec_cardiaca_edit = ui["signos_frec_cardiaca_edit"]
+    signos_frec_respi_edit = ui["signos_frec_respi_edit"]
+    signos_temp_edit = ui["signos_temp_edit"]
+    signos_peso_edit = ui["signos_peso_edit"]
+    signos_talla_edit = ui["signos_talla_edit"]
+    diagnostico_buscador_edit = ui["diagnostico_buscador_edit"]
+    diagnostico_cie_id_edit = ui["diagnostico_cie_id_edit"]
+    diagnostico_cie_edit = ui["diagnostico_cie_edit"]
+    diagnostico_cie_descripcion_edit = ui["diagnostico_cie_descripcion_edit"]
+    diagnostico_definitivo_edit = ui["diagnostico_definitivo_edit"]
+    cie_list_edit = ui["cie_list_edit"]
+    diagnostico_lista_edit = ui["diagnostico_lista_edit"]
+    diagnostico_dialog_edit = ui["diagnostico_dialog_edit"]
+    prescripciones_lista_edit = ui["prescripciones_lista_edit"]
+    presc_medicamento_edit = ui["presc_medicamento_edit"]
+    presc_dosis_edit = ui["presc_dosis_edit"]
+    presc_indicaciones_edit = ui["presc_indicaciones_edit"]
+    presc_firmado_por_edit = ui["presc_firmado_por_edit"]
+    presc_fecha_edit = ui["presc_fecha_edit"]
+    btn_agregar_edit = ui["btn_agregar_edit"]
+    btn_guardar_edit = ui["btn_guardar_edit"]
+    btn_cancelar_edit = ui["btn_cancelar_edit"]
+    prescripciones_dialog_edit = ui["prescripciones_dialog_edit"]
+    tratamiento_descripcion_edit = ui["tratamiento_descripcion_edit"]
+    tratamiento_fecha_edit = ui["tratamiento_fecha_edit"]
+    tratamientos_dialog_edit = ui["tratamientos_dialog_edit"]
+    consulta_nota_edit = ui["consulta_nota_edit"]
+    consulta_dialog_edit = ui["consulta_dialog_edit"]
+    search_field_edit = ui["search_field_edit"]
+    pacientes_list_edit = ui["pacientes_list_edit"]
+    pagination_controls_edit = ui["pagination_controls_edit"]
+    btn_buscar_externo_edit = ui["btn_buscar_externo_edit"]
+
     refresh_pacientes()
 
     return ft.Column(
@@ -1281,6 +2309,12 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
             prescripciones_dialog,
             tratamientos_dialog,
             consulta_dialog,
+            # Diálogos de edición
+            signos_dialog_edit,
+            diagnostico_dialog_edit,
+            prescripciones_dialog_edit,
+            tratamientos_dialog_edit,
+            consulta_dialog_edit,
         ],
         expand=True,
         scroll=ft.ScrollMode.AUTO,

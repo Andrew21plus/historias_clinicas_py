@@ -54,15 +54,21 @@ def delete_diagnostico(id_diagnostico):
     conn = get_connection()  # Usar get_connection
     c = conn.cursor()
     c.execute("DELETE FROM Diagnosticos WHERE id_diagnostico = ?", (id_diagnostico,))
+    conn.commit()
+    conn.close()
+
 
 def get_diagnosticos_by_paciente_and_fecha(id_paciente, fecha):
     conn = get_connection()
     c = conn.cursor()
-    c.execute("""
+    c.execute(
+        """
         SELECT * FROM Diagnosticos 
         WHERE id_paciente = ? AND fecha = ?
         ORDER BY fecha DESC
-    """, (id_paciente, fecha))
+    """,
+        (id_paciente, fecha),
+    )
     rows = c.fetchall()
     diagnosticos = [Diagnostico(*row) for row in rows]
     conn.close()
