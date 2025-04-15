@@ -328,7 +328,7 @@ def crear_evoluciones_ui(
         expand=True, spacing=10, height=200, auto_scroll=True
     )
     btn_agregar_diagnostico = ft.ElevatedButton(
-        "Agregar Diagnóstico", on_click=agregar_diagnostico
+        text="Agregar Diagnóstico", on_click=agregar_diagnostico
     )
 
     diagnostico_dialog = ft.AlertDialog(
@@ -498,6 +498,7 @@ def crear_evoluciones_ui(
     )
 
     ## DIALOGS PARA EDITAR
+    edit_consult_paciente_info = ft.TextField(label="Paciente", disabled=True)
     edit_consult_fecha = ft.TextField(label="Fecha", visible=False)
     edit_id_signos = ft.TextField(label="id_signos_vitales", visible=False)
 
@@ -686,7 +687,7 @@ def crear_evoluciones_ui(
         title=ft.Text("Editar Signos Vitales"),
         content=ft.Column(
             [
-                new_consult_paciente_info,  # Reutilizamos el componente de info de paciente si aplica
+                edit_consult_paciente_info,  # Reutilizamos el componente de info de paciente si aplica
                 ft.Row([signos_presion_edit, signos_frec_cardiaca_edit]),
                 ft.Row([signos_frec_respi_edit, signos_temp_edit]),
                 ft.Row([signos_peso_edit, signos_talla_edit]),
@@ -733,7 +734,7 @@ def crear_evoluciones_ui(
         expand=True, spacing=10, height=200, auto_scroll=True
     )
     btn_agregar_diagnostico_edit = ft.ElevatedButton(
-        "Agregar Diagnóstico", on_click=agregar_diagnostico_edit
+        text="Agregar Diagnóstico", on_click=agregar_diagnostico_edit
     )
 
     diagnostico_dialog_edit = ft.AlertDialog(
@@ -949,6 +950,7 @@ def crear_evoluciones_ui(
         "edit_enfermedad": edit_enfermedad,
         "edit_dialog": edit_dialog,
         "new_consult_paciente_info": new_consult_paciente_info,
+        "edit_consult_paciente_info": edit_consult_paciente_info,
         "new_consult_paciente_id": new_consult_paciente_id,
         "new_consult_paciente_nombre": new_consult_paciente_nombre,
         "edit_consult_fecha": edit_consult_fecha,
@@ -1019,4 +1021,7 @@ def crear_evoluciones_ui(
         "pacientes_list_edit": pacientes_list_edit,
         "pagination_controls_edit": pagination_controls_edit,
         "btn_buscar_externo_edit": btn_buscar_externo_edit,
+        "btn_agregar_diagnostico": btn_agregar_diagnostico,
+        "btn_agregar_diagnostico_edit": btn_agregar_diagnostico_edit,
+        "continuar_con_signos_edit": continuar_con_signos_edit,
     }

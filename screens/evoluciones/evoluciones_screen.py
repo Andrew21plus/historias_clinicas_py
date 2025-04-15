@@ -718,7 +718,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         if len(diagnostico_lista.controls) == 0:
             show_alert("Debe agregar al menos un diagnóstico")
             time.sleep(1)
-            open_prescripciones_dialog()
+            open_diagnostico_dialog(False)
             return
 
         presc_fecha.value = datetime.now().strftime("%d-%m-%Y")
@@ -1176,6 +1176,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
             diagnostico_lista.controls.append(nuevo_tile)
 
         # Limpiar los campos para permitir agregar otro diagnóstico
+        btn_agregar_diagnostico.text = "Agregar Diagnóstico"
         diagnostico_cie.value = ""
         diagnostico_cie_descripcion.value = ""
         diagnostico_definitivo.value = "Presuntivo"
@@ -1188,6 +1189,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         diagnostico_cie_descripcion.value = diag_data.get("descripcion", "")
         diagnostico_definitivo.value = diag_data.get("estado", "Presuntivo")
         diagnostico_cie.editing_id = diag_data.get("id", "")
+        btn_agregar_diagnostico.text = "Guardar Cambios"
         page.update()
 
     def eliminar_diagnostico(e, tile):
@@ -1265,19 +1267,25 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
                 return
 
             # Configurar los campos con los datos del paciente (se asume que se reutilizan los mismos campos de info)
-            new_consult_paciente_info.value = f"{paciente.nombre} {paciente.apellido} - {paciente.num_historia_clinica}"
+            edit_consult_paciente_info.value = f"{paciente.nombre} {paciente.apellido} - {paciente.num_historia_clinica}"
             new_consult_paciente_id.value = id_paciente
             new_consult_paciente_nombre.value = f"{paciente.nombre} {paciente.apellido}"
             edit_consult_fecha.value = fecha_consulta
 
+            # Diagnóstico asociado a esta consulta
+            diagnosticos = obtener_diagnosticos_por_consulta(
+                id_paciente, fecha_consulta
+            )
+            existe_diagnostico = bool(diagnosticos)
+
+            # Guardamos esta info para el diálogo
+            signos_dialog_edit.existe_diagnostico = existe_diagnostico
+
             # Cargar los signos vitales existentes (si existen) en el modo edición
             signos_list = obtener_signos_vitales_paciente(id_paciente, id_usuario)
-            signo_consulta = None
-            if signos_list:
-                for s in signos_list:
-                    if s.fecha == fecha_consulta:
-                        signo_consulta = s
-                        break
+            signo_consulta = next(
+                (s for s in signos_list if s.fecha == fecha_consulta), None
+            )
 
             if signo_consulta is None:
                 # print(f"NO HAY REGISTRO DE SIGNOS: {signo_consulta}, {signos_list}")
@@ -1305,9 +1313,83 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
             show_alert(f"Error al abrir formulario en edición: {str(ex)}")
 
     # --- Funciones de flujo en modo edición ---
+    def guardar_solo_signos_vitales(e, id_paciente):
+        print("[solosignos - id_paciente]: ", id_paciente)
+        try:
+            signos_db = obtener_signos_por_fecha(
+                id_paciente, id_usuario, edit_consult_fecha.value
+            )
+
+            # Extraer los nuevos valores
+            nuevos_signos = {
+                "id_signo": edit_id_signos.value,
+                "fecha": edit_consult_fecha.value,
+                "presion_arterial": signos_presion_edit.value,
+                "frecuencia_cardiaca": signos_frec_cardiaca_edit.value,
+                "frecuencia_respiratoria": signos_frec_respi_edit.value,
+                "temperatura": signos_temp_edit.value,
+                "peso": signos_peso_edit.value,
+                "talla": signos_talla_edit.value,
+            }
+
+            # Imprimir estado original
+            if signos_db:
+                original = (
+                    vars(signos_db[0])
+                    if isinstance(signos_db, list)
+                    else vars(signos_db)
+                )
+                print(f"\n[solosignos - signos_vitales] original: {original}")
+            else:
+                original = None
+                print(
+                    "\n[solosignos - signos_vitales] original: No signos vitales disponibles"
+                )
+
+            # Imprimir los nuevos signos
+            print(f"\n[Nuevos signos] {nuevos_signos}")
+
+            # Comparar y actualizar solo si cambió algo
+            if not original or any(
+                original.get(k) != v for k, v in nuevos_signos.items()
+            ):
+                print(
+                    "\n[solosignos - signos_vitales] Cambios detectados. Actualizando..."
+                )
+                actualizar_signos_vitales(nuevos_signos)
+            else:
+                print("\n[solosignos - signos_vitales] Sin cambios. No se actualiza.")
+
+            show_alert(
+                "✔️ Los signos vitales de la consulta han sido actualizados exitosamente."
+            )
+
+            limpiar_campos_consulta_edit()
+            close_all_dialogs()
+            refresh_pacientes()
+
+        except Exception as ex:
+            show_alert(f"❌ Error al guardar la edición: {str(ex)}")
 
     def open_signos_dialog_edit():
         close_all_dialogs()
+        print("[existe_diagnostico]: ", signos_dialog_edit.existe_diagnostico)
+        if signos_dialog_edit.existe_diagnostico is False:
+            print("[No hay datos de diagnostico asociado a esta consulta]")
+            signos_dialog_edit.actions = [
+                ft.TextButton(
+                    "Guardar",
+                    on_click=lambda e, id_paciente=new_consult_paciente_id.value: guardar_solo_signos_vitales(
+                        e, id_paciente
+                    ),
+                ),
+                ft.TextButton("Cancelar", on_click=close_all_dialogs),
+            ]
+        else:
+            signos_dialog_edit.actions = [
+                ft.TextButton("Continuar", on_click=continuar_con_signos_edit),
+                ft.TextButton("Cancelar", on_click=close_all_dialogs),
+            ]
         signos_dialog_edit.open = True
         page.update()
 
@@ -1427,9 +1509,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         if len(diagnostico_lista_edit.controls) == 0:
             show_alert("Debe agregar al menos un diagnóstico")
             time.sleep(1)
-            open_prescripciones_dialog_edit(
-                id_paciente, fecha_consulta, from_tratamientos
-            )
+            open_diagnostico_dialog_edit(id_paciente, fecha_consulta, from_tratamientos)
             return
 
         presc_fecha_edit.value = fecha_consulta
@@ -1992,6 +2072,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
             diagnostico_lista_edit.controls.append(nuevo_tile_edit)
 
         # Limpiar los campos para permitir agregar otro diagnóstico
+        btn_agregar_diagnostico_edit.text = "Agregar Diagnóstico"
         diagnostico_cie_edit.value = ""
         diagnostico_cie_descripcion_edit.value = ""
         diagnostico_definitivo_edit.value = "Presuntivo"
@@ -2004,6 +2085,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         diagnostico_cie_descripcion_edit.value = diag_data_edit.get("descripcion", "")
         diagnostico_definitivo_edit.value = diag_data_edit.get("estado", "Presuntivo")
         diagnostico_cie_edit.editing_id = diag_data_edit.get("id", "")
+        btn_agregar_diagnostico_edit.text = "Guardar Cambios"
         page.update()
 
     def eliminar_diagnostico_edit(e, tile):
@@ -2215,6 +2297,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
     edit_enfermedad = ui["edit_enfermedad"]
     edit_dialog = ui["edit_dialog"]
     new_consult_paciente_info = ui["new_consult_paciente_info"]
+    edit_consult_paciente_info = ui["edit_consult_paciente_info"]
     new_consult_paciente_id = ui["new_consult_paciente_id"]
     new_consult_paciente_nombre = ui["new_consult_paciente_nombre"]
     signos_dialog = ui["signos_dialog"]
@@ -2286,6 +2369,9 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
     pacientes_list_edit = ui["pacientes_list_edit"]
     pagination_controls_edit = ui["pagination_controls_edit"]
     btn_buscar_externo_edit = ui["btn_buscar_externo_edit"]
+    btn_agregar_diagnostico = ui["btn_agregar_diagnostico"]
+    btn_agregar_diagnostico_edit = ui["btn_agregar_diagnostico_edit"]
+    continuar_con_signos_edit = ui["continuar_con_signos_edit"]
 
     refresh_pacientes()
 
