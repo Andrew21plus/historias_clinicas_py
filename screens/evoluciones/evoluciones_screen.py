@@ -143,41 +143,58 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
 
         # Función para generar PDF
         def generar_pdf(e):
-            from screens.evoluciones.pdf_generator_evol import generar_pdf_evoluciones
-            
-            # Preparar datos para el PDF
-            consultas_pdf = []
-            for fecha, consulta in sorted(consultas_por_fecha.items(), reverse=True):
-                consulta_data = {
-                    'fecha': fecha,
-                    'signos_vitales': {
-                        'presion': getattr(consulta['signos_vitales'], 'presion_arterial', ''),
-                        'frec_cardiaca': getattr(consulta['signos_vitales'], 'frecuencia_cardiaca', ''),
-                        'frec_respi': getattr(consulta['signos_vitales'], 'frecuencia_respiratoria', ''),
-                        'temp': getattr(consulta['signos_vitales'], 'temperatura', ''),
-                        'peso': getattr(consulta['signos_vitales'], 'peso', ''),
-                        'talla': getattr(consulta['signos_vitales'], 'talla', '')
-                    } if consulta.get('signos_vitales') else None,
-                    'diagnosticos': [{
-                        'cie': diag.cie,
-                        'descripcion': diag.diagnostico,
-                        'estado': "Definitivo" if diag.definitivo else "Presuntivo"
-                    } for diag in consulta.get('diagnosticos', [])],
-                    'prescripciones': [{
-                        'medicamento': presc.medicamento,
-                        'dosis': presc.dosis,
-                        'indicaciones': presc.indicaciones or ""
-                    } for presc in consulta.get('prescripciones', [])],
-                    'tratamiento': consulta['tratamientos'][0].tratamiento if consulta.get('tratamientos') else None,
-                    'notas': consulta['evoluciones'][0].notas if consulta.get('evoluciones') else None
-                }
-                consultas_pdf.append(consulta_data)
-            
-            # Generar PDF
-            pdf_path = generar_pdf_evoluciones(paciente_info, consultas_pdf)
-            
-            # Mostrar mensaje de éxito
-            show_alert(f"PDF generado exitosamente: {pdf_path}")
+            try:
+                from screens.evoluciones.pdf_generator_evol import generar_pdf_evoluciones
+                import os
+                import webbrowser
+                from datetime import datetime
+
+                # Preparar datos para el PDF
+                consultas_pdf = []
+                for fecha, consulta in sorted(consultas_por_fecha.items(), reverse=True):
+                    consulta_data = {
+                        'fecha': fecha,
+                        'signos_vitales': {
+                            'presion': getattr(consulta['signos_vitales'], 'presion_arterial', ''),
+                            'frec_cardiaca': getattr(consulta['signos_vitales'], 'frecuencia_cardiaca', ''),
+                            'frec_respi': getattr(consulta['signos_vitales'], 'frecuencia_respiratoria', ''),
+                            'temp': getattr(consulta['signos_vitales'], 'temperatura', ''),
+                            'peso': getattr(consulta['signos_vitales'], 'peso', ''),
+                            'talla': getattr(consulta['signos_vitales'], 'talla', '')
+                        } if consulta.get('signos_vitales') else None,
+                        'diagnosticos': [{
+                            'cie': diag.cie,
+                            'descripcion': diag.diagnostico,
+                            'estado': "Definitivo" if diag.definitivo else "Presuntivo"
+                        } for diag in consulta.get('diagnosticos', [])],
+                        'prescripciones': [{
+                            'medicamento': presc.medicamento,
+                            'dosis': presc.dosis,
+                            'indicaciones': presc.indicaciones or ""
+                        } for presc in consulta.get('prescripciones', [])],
+                        'tratamiento': consulta['tratamientos'][0].tratamiento if consulta.get('tratamientos') else None,
+                        'notas': consulta['evoluciones'][0].notas if consulta.get('evoluciones') else None
+                    }
+                    consultas_pdf.append(consulta_data)
+
+                # Crear carpeta si no existe
+                os.makedirs("temp_pdfs", exist_ok=True)
+
+                # Generar nombre único para el archivo
+                filename = f"evoluciones_{paciente_info['num_historia']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                filepath = os.path.join("temp_pdfs", filename)
+
+                # Generar PDF
+                generar_pdf_evoluciones(paciente_info, consultas_pdf, output_path=filepath)
+
+                # Abrir PDF en el visor predeterminado
+                webbrowser.open(filepath)
+
+                # Mensaje de éxito
+                show_alert(f"PDF generado exitosamente: {filename}")
+
+            except Exception as e:
+                show_alert(f"Error al generar PDF: {str(e)}")
 
         # Construir la UI para cada consulta
         consultas_ui = []
