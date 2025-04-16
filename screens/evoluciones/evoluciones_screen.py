@@ -30,7 +30,7 @@ from .evoluciones_crud import (
 from services.paciente_service import get_paciente
 from datetime import datetime
 from .evoluciones_ui import crear_evoluciones_ui
-
+from .pdf_generator_evol import generar_pdf_evoluciones
 
 def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str):
     current_page = 0
@@ -91,11 +91,30 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
             ],
             initially_expanded=False,
         )
-
+    
+    def calcular_edad(fecha_nacimiento):
+        try:
+            fecha_nac = datetime.strptime(fecha_nacimiento, "%d-%m-%Y")
+            hoy = datetime.now()
+            edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+            return f"{edad} años"
+        except:
+            return "Fecha inválida"
+    
     def build_evolucion_section(id_paciente):
         signos = obtener_signos_vitales_paciente(id_paciente, id_usuario)
         if not signos:
             return ft.Container()
+        
+        # Obtener datos del paciente para el PDF
+        paciente = get_paciente(id_paciente)
+        paciente_info = {
+            'nombre': paciente.nombre if paciente else "Desconocido",
+            'apellido': paciente.apellido if paciente else "",
+            'num_historia': paciente.num_historia_clinica if paciente else "",
+            'edad': calcular_edad(paciente.fecha_nacimiento) if paciente else "",
+            'sexo': paciente.sexo if paciente else ""
+        }
 
         # Agrupar por fecha
         consultas_por_fecha = {}
@@ -121,6 +140,44 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
                     )
                     or [],
                 }
+
+        # Función para generar PDF
+        def generar_pdf(e):
+            from screens.evoluciones.pdf_generator_evol import generar_pdf_evoluciones
+            
+            # Preparar datos para el PDF
+            consultas_pdf = []
+            for fecha, consulta in sorted(consultas_por_fecha.items(), reverse=True):
+                consulta_data = {
+                    'fecha': fecha,
+                    'signos_vitales': {
+                        'presion': getattr(consulta['signos_vitales'], 'presion_arterial', ''),
+                        'frec_cardiaca': getattr(consulta['signos_vitales'], 'frecuencia_cardiaca', ''),
+                        'frec_respi': getattr(consulta['signos_vitales'], 'frecuencia_respiratoria', ''),
+                        'temp': getattr(consulta['signos_vitales'], 'temperatura', ''),
+                        'peso': getattr(consulta['signos_vitales'], 'peso', ''),
+                        'talla': getattr(consulta['signos_vitales'], 'talla', '')
+                    } if consulta.get('signos_vitales') else None,
+                    'diagnosticos': [{
+                        'cie': diag.cie,
+                        'descripcion': diag.diagnostico,
+                        'estado': "Definitivo" if diag.definitivo else "Presuntivo"
+                    } for diag in consulta.get('diagnosticos', [])],
+                    'prescripciones': [{
+                        'medicamento': presc.medicamento,
+                        'dosis': presc.dosis,
+                        'indicaciones': presc.indicaciones or ""
+                    } for presc in consulta.get('prescripciones', [])],
+                    'tratamiento': consulta['tratamientos'][0].tratamiento if consulta.get('tratamientos') else None,
+                    'notas': consulta['evoluciones'][0].notas if consulta.get('evoluciones') else None
+                }
+                consultas_pdf.append(consulta_data)
+            
+            # Generar PDF
+            pdf_path = generar_pdf_evoluciones(paciente_info, consultas_pdf)
+            
+            # Mostrar mensaje de éxito
+            show_alert(f"PDF generado exitosamente: {pdf_path}")
 
         # Construir la UI para cada consulta
         consultas_ui = []
@@ -473,14 +530,20 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
                         weight=ft.FontWeight.BOLD,
                         color=ft.colors.BLUE_700,
                     ),
-                    ft.IconButton(
-                        icon=ft.icons.ADD,
-                        icon_color=ft.colors.GREEN,
-                        tooltip="Crear Nueva Consulta",
-                        on_click=lambda e, ip=id_paciente, iu=id_usuario: open_create_dialog(
-                            ip, iu
+                    ft.Row([
+                        ft.IconButton(
+                            icon=ft.icons.PICTURE_AS_PDF,
+                            icon_color=ft.colors.RED,
+                            tooltip="Generar PDF de consultas",
+                            on_click=generar_pdf
                         ),
-                    ),
+                        ft.IconButton(
+                            icon=ft.icons.ADD,
+                            icon_color=ft.colors.GREEN,
+                            tooltip="Crear Nueva Consulta",
+                            on_click=lambda e, ip=id_paciente, iu=id_usuario: open_create_dialog(ip, iu),
+                        ),
+                    ])
                 ],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             ),
