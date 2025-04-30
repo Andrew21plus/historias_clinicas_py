@@ -17,6 +17,7 @@ from .evoluciones_crud import (
     guardar_prescripcion,
     guardar_tratamiento,
     guardar_evolucion,
+    guardar_nuevo_cie,
 )
 from services.paciente_service import get_paciente
 from datetime import datetime
@@ -723,39 +724,56 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
     def save_full_consultation(e, id_paciente):
         print("[save_full_consultation] id_paciente: ", id_paciente)
         if not consulta_nota.value:
-            show_alert("La nota de consulta es obligatorio")
+            show_alert("La nota de consulta es obligatoria")
             time.sleep(1)
             open_consulta_dialog()
             return
+        
+        # Verificar si el diagnóstico tiene CIE válido
+        if not diagnostico_cie.value or not diagnostico_cie_descripcion.value:
+            show_alert("El código CIE y su descripción son obligatorios")
+            time.sleep(1)
+            open_diagnostico_dialog(from_signos=False)
+            return
+
         signos_vitales_disponibles_hoy = obtener_signos_hoy(id_paciente, id_usuario)
-        # Esta función se llamará al final para guardar todo
+        
         try:
+            # 1. Guardar signos vitales (si no existen hoy)
             if signos_vitales_disponibles_hoy is None:
-                # 1. Guardar signos vitales
-                result_signos_vitales = guardar_signos_vitales(
-                    {
-                        "id_paciente": new_consult_paciente_id.value,
-                        "presion": signos_presion.value,
-                        "frecuencia_cardiaca": signos_frec_cardiaca.value,
-                        "frecuencia_respiratoria": signos_frec_respi.value,
-                        "temperatura": signos_temp.value,
-                        "peso": signos_peso.value,
-                        "talla": signos_talla.value,
-                    }
-                )
-
-            # 2. Guardar diagnóstico
-            result_diagnostico = guardar_diagnostico(
-                {
+                result_signos_vitales = guardar_signos_vitales({
                     "id_paciente": new_consult_paciente_id.value,
-                    "id_usuario": id_usuario,
-                    "codigo_cie": diagnostico_cie.value,
-                    "descripcion_cie": diagnostico_cie_descripcion.value,
-                    "definitivo": diagnostico_definitivo.value,
-                }
-            )
+                    "presion": signos_presion.value,
+                    "frecuencia_cardiaca": signos_frec_cardiaca.value,
+                    "frecuencia_respiratoria": signos_frec_respi.value,
+                    "temperatura": signos_temp.value,
+                    "peso": signos_peso.value,
+                    "talla": signos_talla.value,
+                })
+            else:
+                result_signos_vitales = "Signos vitales ya registrados hoy"
 
-            # 3. Guardar prescripciones
+            # 2. Verificar y guardar CIE si no existe
+            cie_existente = obtener_cie(diagnostico_cie.value)
+            result_cie = ""
+            
+            if not cie_existente:  # Solo guardar si no existe
+                result_cie = guardar_nuevo_cie(
+                    diagnostico_cie.value,
+                    diagnostico_cie_descripcion.value
+                )
+           
+            # 3. Guardar diagnóstico (siempre)
+            result_diagnostico = guardar_diagnostico({
+                "id_paciente": new_consult_paciente_id.value,
+                "id_usuario": id_usuario,
+                "codigo_cie": diagnostico_cie.value,
+                "descripcion_cie": diagnostico_cie_descripcion.value,
+                "definitivo": diagnostico_definitivo.value,
+            })
+
+            # 4. Guardar prescripciones
+            result_prescripciones = []
             for med_tile in prescripciones_lista.controls:
                 info_column = med_tile.content.controls[0]
                 full_text = info_column.controls[0].value
@@ -764,60 +782,84 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
                 if indicaciones == "Sin indicaciones":
                     indicaciones = ""
 
-                result_prescripcion = guardar_prescripcion(
-                    {
-                        "id_paciente": new_consult_paciente_id.value,
-                        "id_usuario": id_usuario,
-                        "medicamento": medicamento,
-                        "dosis": dosis,
-                        "indicaciones": indicaciones,
-                        "firmado_por": presc_firmado_por.value,
-                        "fecha": presc_fecha.value,
-                    }
-                )
-
-            # 4. Guardar tratamientos
-            result_tratamiento = guardar_tratamiento(
-                {
+                result = guardar_prescripcion({
                     "id_paciente": new_consult_paciente_id.value,
                     "id_usuario": id_usuario,
-                    "descripcion": tratamiento_descripcion.value,
-                    "fecha": tratamiento_fecha.value,
-                }
-            )
+                    "medicamento": medicamento,
+                    "dosis": dosis,
+                    "indicaciones": indicaciones,
+                    "firmado_por": presc_firmado_por.value,
+                    "fecha": presc_fecha.value,
+                })
+                result_prescripciones.append(result)
 
-            result_consulta = guardar_evolucion(
-                {
-                    "id_paciente": new_consult_paciente_id.value,
-                    "id_usuario": id_usuario,
-                    "nota": consulta_nota.value,
-                }
-            )
+            # 5. Guardar tratamientos
+            result_tratamiento = guardar_tratamiento({
+                "id_paciente": new_consult_paciente_id.value,
+                "id_usuario": id_usuario,
+                "descripcion": tratamiento_descripcion.value,
+                "fecha": tratamiento_fecha.value,
+            })
+
+            # 6. Guardar evolución
+            result_consulta = guardar_evolucion({
+                "id_paciente": new_consult_paciente_id.value,
+                "id_usuario": id_usuario,
+                "nota": consulta_nota.value,
+            })
+
+            # Mostrar resumen de operaciones
+            mensaje = f"""
+            {result_signos_vitales if signos_vitales_disponibles_hoy is None else ''}
+            {result_cie}
+            {result_diagnostico}
+            {' | '.join(result_prescripciones)}
+            {result_tratamiento}
+            {result_consulta}
+            """
+            show_alert(mensaje.strip())
 
             # Limpiar todos los valores
-            diagnostico_buscador.value = ""
-            diagnostico_cie.value = ""
-            diagnostico_cie_descripcion.value = ""
-            diagnostico_cie_id.value = ""
-            diagnostico_definitivo.value = ""
+            limpiar_campos_consulta()
 
-            presc_medicamento.value = ""
-            presc_dosis.value = ""
-            presc_indicaciones.value = ""
-            presc_firmado_por.value = ""
-
-            tratamiento_descripcion.value = ""
-
-            consulta_nota.value = ""
-
-            show_alert(
-                f"{result_signos_vitales if signos_vitales_disponibles_hoy is None else ''}\n{result_diagnostico}\n{result_prescripcion}\n{result_tratamiento}\n{result_consulta}"
-            )
             close_all_dialogs()
             refresh_pacientes()
 
         except Exception as e:
             show_alert(f"Error al guardar: {str(e)}")
+
+    def limpiar_campos_consulta():
+        """Limpia todos los campos después de guardar una consulta"""
+        # Limpiar campos de signos vitales
+        signos_presion.value = ""
+        signos_frec_cardiaca.value = ""
+        signos_frec_respi.value = ""
+        signos_temp.value = ""
+        signos_peso.value = ""
+        signos_talla.value = ""
+
+        # Limpiar campos de diagnóstico
+        diagnostico_buscador.value = ""
+        diagnostico_cie.value = ""
+        diagnostico_cie_descripcion.value = ""
+        diagnostico_cie_id.value = ""
+        diagnostico_definitivo.value = ""
+
+        # Limpiar prescripciones
+        prescripciones_lista.controls.clear()
+        presc_medicamento.value = ""
+        presc_dosis.value = ""
+        presc_indicaciones.value = ""
+        presc_firmado_por.value = ""
+
+        # Limpiar tratamientos
+        tratamiento_descripcion.value = ""
+
+        # Limpiar consulta
+        consulta_nota.value = ""
+
+        # Actualizar la UI
+        page.update()
 
     # Función para cerrar todos los diálogos
     def close_all_dialogs(e=None):
@@ -853,19 +895,31 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
         refresh_cie(search_query)
 
     def refresh_cie(search_query=""):
-        """Actualiza la lista de CIE según búsqueda"""
+        """Actualiza la lista de CIE mostrando opciones alternativas si no hay resultados"""
         cie_list.controls.clear()
-
-        resultados = obtener_cie(search_query)  # Usa la función del CRUD
+        resultados = obtener_cie(search_query)
 
         if not resultados:
+            # Mostrar mensaje y opciones alternativas
             cie_list.controls.append(
                 ft.ListTile(
-                    title=ft.Text("No se encontraron resultados"),
-                    leading=ft.Icon(ft.icons.WARNING),
+                    title=ft.Text("No se encontraron resultados locales"),
+                    subtitle=ft.Text("Puedes buscar en:"),
                 )
             )
+            
+            # Mostrar botón de búsqueda externa
+            btn_buscar_externo.visible = True
+            
+            # Habilitar edición directa de campos CIE
+            diagnostico_cie.disabled = False
+            diagnostico_cie_descripcion.disabled = False
+            
         else:
+            # Ocultar opciones alternativas
+            btn_buscar_externo.visible = False
+            
+            # Mostrar resultados locales
             for cie in resultados:
                 cie_list.controls.append(
                     ft.ListTile(
@@ -875,13 +929,20 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
                         on_click=lambda e, cie=cie: seleccionar_cie(cie),
                     )
                 )
+            
+            # Deshabilitar edición directa si hay resultados
+            diagnostico_cie.disabled = True
+            diagnostico_cie_descripcion.disabled = True
+        
         page.update()
 
     def seleccionar_cie(cie):
-        diagnostico_cie_id.value = str(cie["id"])  # Guarda el ID interno
+        """Selecciona un CIE de la lista"""
+        diagnostico_cie_id.value = str(cie["id"])
         diagnostico_cie.value = cie["codigo"]
         diagnostico_cie_descripcion.value = cie["descripcion"]
         diagnostico_definitivo.value = "Presuntivo"
+        btn_buscar_externo.visible = False
         page.update()
 
     # Función para agregar un medicamento a la lista
@@ -1072,6 +1133,7 @@ def EvolucionesScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str
     tratamientos_dialog = ui["tratamientos_dialog"]
     consulta_nota = ui["consulta_nota"]
     consulta_dialog = ui["consulta_dialog"]
+    btn_buscar_externo = ui["btn_buscar_externo"]
 
     refresh_pacientes()
 

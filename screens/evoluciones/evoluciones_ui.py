@@ -239,19 +239,28 @@ def crear_evoluciones_ui(
 
     # --- Diálogo 2: Diagnóstico ---
     diagnostico_buscador = ft.TextField(
-        label="Buscar cie...",
+        label="Buscar CIE...",
         on_change=on_search_cie,
         width=page.window_width * 0.9,
         suffix_icon=ft.icons.SEARCH,
     )
-    diagnostico_cie = ft.TextField(label="Codigo cie", multiline=True)
-    diagnostico_cie_descripcion = ft.TextField(label="Descripcion", visible=True)
+
+    # Botón para buscar externamente (inicialmente oculto)
+    btn_buscar_externo = ft.ElevatedButton(
+        "Buscar en cpockets.com",
+        on_click=lambda _: page.launch_url("https://cpockets.com/cie10"),
+        icon=ft.icons.PUBLIC,
+        visible=False,
+    )
+
+    diagnostico_cie = ft.TextField(label="Código CIE")
+    diagnostico_cie_descripcion = ft.TextField(label="Descripción", multiline=True)
     diagnostico_cie_id = ft.TextField(visible=False)
     diagnostico_definitivo = ft.Dropdown(
         label="Estado",
         options=[
-            ft.dropdown.DropdownOption("Definitivo"),
-            ft.dropdown.DropdownOption("Presuntivo"),
+            ft.dropdown.Option("Definitivo"),
+            ft.dropdown.Option("Presuntivo"),
         ],
     )
 
@@ -269,10 +278,9 @@ def crear_evoluciones_ui(
                     width=900,
                     border=ft.border.all(1, ft.colors.GREY_300),
                 ),
+                btn_buscar_externo,
                 diagnostico_cie_id,
-                ft.Row(
-                    [diagnostico_cie, diagnostico_definitivo],
-                ),
+                ft.Row([diagnostico_cie, diagnostico_definitivo]),
                 diagnostico_cie_descripcion,
             ],
             spacing=10,
@@ -452,4 +460,5 @@ def crear_evoluciones_ui(
         "tratamientos_dialog": tratamientos_dialog,
         "consulta_nota": consulta_nota,
         "consulta_dialog": consulta_dialog,
+        "btn_buscar_externo": btn_buscar_externo,
     }
