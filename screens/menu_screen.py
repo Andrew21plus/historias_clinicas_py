@@ -4,7 +4,7 @@ from screens.historia_clinica.historia_clinica_screen import HistoriaClinicaScre
 from screens.tamizaje.tamizaje_screen import TamizajeScreen
 from screens.evoluciones.evoluciones_screen import EvolucionesScreen
 from screens.certificados.certificados_screen import (
-    CertificadosScreen,
+    CertificadoScreen,
 )  # Nueva importación
 from screens.reportes.reportes_screen import ReportesScreen  # Nueva importación
 
@@ -23,7 +23,7 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to
         elif index == 3:
             content_area.content = EvolucionesScreen(page, id_usuario, nombre, apellido)
         elif index == 4:  # Nueva opción: Certificados
-            content_area.content = CertificadosScreen(page, id_usuario)
+            content_area.content = CertificadoScreen(page, id_usuario)
         elif index == 5:  # Nueva opción: Reportes
             content_area.content = ReportesScreen(page, id_usuario)
         elif index == 6:  # Cerrar sesión (ahora en índice 6)
