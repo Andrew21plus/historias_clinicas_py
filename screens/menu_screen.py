@@ -23,7 +23,7 @@ def MenuScreen(page: ft.Page, id_usuario: int, nombre: str, apellido: str, go_to
         elif index == 3:
             content_area.content = EvolucionesScreen(page, id_usuario, nombre, apellido)
         elif index == 4:  # Nueva opción: Certificados
-            content_area.content = CertificadoScreen(page, id_usuario)
+            content_area.content = CertificadoScreen(page, id_usuario, f"{nombre} {apellido}")
         elif index == 5:  # Nueva opción: Reportes
             content_area.content = ReportesScreen(page, id_usuario)
         elif index == 6:  # Cerrar sesión (ahora en índice 6)

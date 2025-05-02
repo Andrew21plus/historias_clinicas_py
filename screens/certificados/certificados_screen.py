@@ -4,7 +4,7 @@ from .certificado_crud import buscar_pacientes, obtener_diagnosticos_paciente
 from .certificado_ui import crear_buscador_pacientes, crear_formulario_certificado
 from .pdf_generator_certificados import generar_pdf_certificado
 
-def CertificadoScreen(page: ft.Page, id_usuario: int):
+def CertificadoScreen(page: ft.Page, id_usuario: int, nombre_medico: str):
     # Estado
     paciente_seleccionado = None
     diagnosticos_seleccionados = []
@@ -62,12 +62,10 @@ def CertificadoScreen(page: ft.Page, id_usuario: int):
 
             fecha_str = fecha_seleccionada.strftime("%d-%m-%Y")
 
-
             diagnosticos = obtener_diagnosticos_paciente(
                 paciente_seleccionado.id_paciente, 
                 fecha_str
             )
-            #print("Diagnosticos para el paciente: ", paciente_seleccionado.id_paciente , "en la fecha: ", fecha_str , "= " , diagnosticos)
             diagnosticos_disponibles = diagnosticos
             diagnosticos_seleccionados.clear()
             
@@ -87,25 +85,38 @@ def CertificadoScreen(page: ft.Page, id_usuario: int):
     
     def on_paciente_search(e):
         query = buscador["search_field"].value
-        resultados = buscar_pacientes(id_usuario, query)
-        
-        buscador["pacientes_list"].controls.clear()
-        for paciente in resultados:
-            buscador["pacientes_list"].controls.append(
-                ft.ListTile(
-                    title=ft.Text(f"{paciente.nombre} {paciente.apellido}"),
-                    on_click=lambda e, p=paciente: on_paciente_select(p)
+        if query:
+            resultados = buscar_pacientes(id_usuario, query)
+            
+            buscador["pacientes_list"].controls.clear()
+            for paciente in resultados:
+                buscador["pacientes_list"].controls.append(
+                    ft.ListTile(
+                        title=ft.Text(f"{paciente.nombre} {paciente.apellido}"),
+                        on_click=lambda e, p=paciente: on_paciente_select(p)
+                    )
                 )
-            )
+            # Mostrar la lista de pacientes solo cuando hay resultados
+            buscador["pacientes_container"].visible = True
+        else:
+            buscador["pacientes_container"].visible = False
         page.update()
     
     def on_paciente_select(paciente):
         nonlocal paciente_seleccionado
         paciente_seleccionado = paciente
         buscador["search_field"].value = f"{paciente.nombre} {paciente.apellido}"
-        buscador["pacientes_list"].controls.clear()
+        # Ocultar la lista de pacientes después de seleccionar uno
+        buscador["pacientes_container"].visible = False
         
-        # Configurar el botón de fecha
+        # Configurar el texto de certificación con datos del paciente
+        formulario["texto_certificacion"].value = (
+            f"CERTIFICO que el/la paciente {paciente.nombre} {paciente.apellido} (ID: {paciente.id_paciente}) "
+            "fue atendido(a) en esta unidad médica por presentar los diagnósticos mencionados "
+            "a continuación, requiriendo las indicaciones médicas correspondientes."
+        )
+        
+        # Resto del código permanece igual...
         formulario["fecha_consulta_button"].on_click = abrir_selector_fecha
         formulario["fecha_consulta_button"].disabled = False
         
@@ -144,7 +155,9 @@ def CertificadoScreen(page: ft.Page, id_usuario: int):
             "indicaciones": formulario["indicaciones"].value,
             "dias_reposo": formulario["dias_reposo"].value,
             "fecha_emision": datetime.now().strftime("%d/%m/%Y"),
-            "fecha_consulta": formulario["fecha_consulta"].value
+            "fecha_consulta": formulario["fecha_consulta"].value,
+            "medico": nombre_medico,
+            "texto_certificacion": formulario["texto_certificacion"].value
         }
         
         try:
